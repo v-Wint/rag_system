@@ -1,12 +1,14 @@
 from loguru import logger
 from zenml import step, log_metadata
+from typing_extensions import Annotated
+
 from rag_system.infrastructure.db import mongo_init
 from rag_system.application.etl import get_document_hashes, compute_files_hashes
 from rag_system.domain.documents import Document
 
 
 @step
-def reconcile_documents_step(paths: list[str]) -> list[str]:
+def reconcile_documents_step(paths: list[str]) -> Annotated[list[str], "paths_to_upsert"]:
     mongo_init()
 
     logger.info(f"Reconciling {len(paths)} files against warehouse")

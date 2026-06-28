@@ -11,7 +11,7 @@ from rag_system.domain import Document
 
 
 @step
-def extract_documents_step(data_dir: str, document_paths: list[str]) -> Annotated[list[Path], "extracted_paths"]:
+def extract_documents_step(data_dir: str, document_paths: list[str]) -> Annotated[list[str], "extracted_paths"]:
     mongo_init()
     logger.info(f"Starting to extract {len(document_paths)} document(s).")
     root = Path(data_dir).resolve()
