@@ -4,33 +4,30 @@ from tqdm import tqdm
 from typing_extensions import Annotated
 from zenml import step, log_metadata
 from datetime import datetime, timezone
-
 from rag_system.infrastructure.db import mongo_init
 from rag_system.application.etl import extract_text, compute_file_hash
 from rag_system.domain import Document
 
 
 @step
-def extract_documents_step(data_dir: str, document_paths: list[str]) -> Annotated[list[str], "extracted_paths"]:
+def extract_documents_step(data_dir: str, document_paths: list[str]) -> Annotated[list[dict], "extracted_documents"]:
     mongo_init()
     logger.info(f"Starting to extract {len(document_paths)} document(s).")
     root = Path(data_dir).resolve()
     metadata = {}
-    successful_paths = []
-
+    results = []
     for path_str in tqdm(document_paths):
         path = Path(path_str)
-        successful, extension = _extract_document(path, root)
-        if successful:
-            successful_paths.append(path)
-        metadata = _add_to_metadata(metadata, extension, bool(successful))
-
+        result_id, extension = _extract_document(path, root)
+        if result_id:
+            results.append((path, result_id))
+        metadata = _add_to_metadata(metadata, extension, bool(result_id))
     log_metadata(metadata=metadata, infer_artifact=True)
-    logger.info(f"Successfully extracted {len(successful_paths)} / {len(document_paths)} documents.")
-    return [str(path.relative_to(root)) for path in successful_paths]
+    logger.info(f"Successfully extracted {len(results)} / {len(document_paths)} documents.")
+    return [{"path": str(path.relative_to(root)), "id": result_id} for path, result_id in results]
 
 
-def _extract_document(path: Path, root: Path) -> tuple[bool, str]:
+def _extract_document(path: Path, root: Path) -> tuple[str | None, str]:
     try:
         text = extract_text(path)
         hash_ = compute_file_hash(str(path))
@@ -54,10 +51,10 @@ def _extract_document(path: Path, root: Path) -> tuple[bool, str]:
                 updated_at=now,
             ),
         ).run()
-        return True, path.suffix
+        return str(result.id), path.suffix
     except Exception as e:
         logger.error(f"Failed to extract {path}: {e!s}")
-        return False, path.suffix
+        return None, path.suffix
 
 
 def _add_to_metadata(metadata: dict, extension: str, successful: bool) -> dict:
