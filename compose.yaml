@@ -6,8 +6,8 @@ services:
       options:
         max-size: 1g
     environment:
-      MONGO_INITDB_ROOT_USERNAME: "rag"
-      MONGO_INITDB_ROOT_PASSWORD: "rag"
+      MONGO_INITDB_ROOT_USERNAME: "rag_system"
+      MONGO_INITDB_ROOT_PASSWORD: "rag_system"
     ports:
       - 27017:27017
     volumes:
