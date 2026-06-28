@@ -1,12 +1,21 @@
 from pathlib import Path
+from enum import Enum
 
-def extract_text(path: Path) -> str:
-    match path.suffix:
-        case ".md":
-            return _extract_md(path)
-        case _:
-            raise ValueError(f"Unsupported extension: {path.suffix}")
+
+class FileType(str, Enum):
+    MARKDOWN = '.md'
 
 
 def _extract_md(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+ETL_EXTRACTION_REPO = {
+    FileType.MARKDOWN: _extract_md
+}
+def extract_text(path: Path) -> str:
+    f = ETL_EXTRACTION_REPO.get(path.suffix)
+    if not f:
+        raise ValueError(f"Unsupported extension: {path.suffix}")
+    return f(path)
+

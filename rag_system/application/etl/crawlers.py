@@ -1,8 +1,8 @@
 from typing import Iterator
-
 from pathlib import Path
+from .text_extractors import FileType
 
-from rag_system.constants import SUPPORTED_EXTENSIONS
+SUPPORTED_EXTENSIONS = [x.value for x in FileType]
 
 
 def crawl_document_paths(data_dir: str | Path) -> list[Path]:
@@ -17,18 +17,18 @@ def crawl_document_paths(data_dir: str | Path) -> list[Path]:
 
 
 def _crawl(directory: Path) -> Iterator[Path]:
-    file_stems = {
-        p.stem
-        for p in directory.iterdir()
-        if p.is_file() and p.suffix in SUPPORTED_EXTENSIONS
-    }
+    files = []
+    subdirs = []
+    file_stems = set()
 
     for item in directory.iterdir():
         if item.is_file() and item.suffix in SUPPORTED_EXTENSIONS:
-            yield item
-        elif item.is_dir() and item.name not in file_stems:
-            yield from _crawl(item)
+            files.append(item)
+            file_stems.add(item.stem)
+        elif item.is_dir():
+            subdirs.append(item)
 
-    
-if __name__ == '__main__':
-    print(crawl_document_paths('./data'))
+    yield from files
+    for subdir in subdirs:
+        if subdir.name not in file_stems:
+            yield from _crawl(subdir)
