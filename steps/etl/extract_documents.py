@@ -3,10 +3,10 @@ from loguru import logger
 from tqdm import tqdm
 from typing_extensions import Annotated
 from zenml import step, log_metadata
+from datetime import datetime, timezone
 
 from rag_system.infrastructure.db import mongo_init
-
-from rag_system.application.etl import extract_text
+from rag_system.application.etl import extract_text, compute_file_hash
 from rag_system.domain import Document
 
 
@@ -33,13 +33,27 @@ def extract_documents_step(data_dir: str, document_paths: list[str]) -> Annotate
 def _extract_document(path: Path, root: Path) -> tuple[bool, str]:
     try:
         text = extract_text(path)
-        document = Document(
-            root_dir=str(root),
-            absolute_path=str(path),
-            relative_path=str(path.relative_to(root)),
-            text=text,
-        )
-        document.save()
+        hash_ = compute_file_hash(str(path))
+        now = datetime.now(timezone.utc)
+        result = Document.find_one({"absolute_path": str(path)}).upsert(
+            {"$set": {
+                "root_dir": str(root),
+                "absolute_path": str(path),
+                "relative_path": str(path.relative_to(root)),
+                "text": text,
+                "hash": hash_,
+                "updated_at": now,
+            }},
+            on_insert=Document(
+                root_dir=str(root),
+                absolute_path=str(path),
+                relative_path=str(path.relative_to(root)),
+                text=text,
+                hash=hash_,
+                created_at=now,
+                updated_at=now,
+            ),
+        ).run()
         return True, path.suffix
     except Exception as e:
         logger.error(f"Failed to extract {path}: {e!s}")

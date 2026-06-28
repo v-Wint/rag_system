@@ -1,2 +1,3 @@
 from .crawl_document_paths import crawl_document_paths_step
+from .reconcile_documents import reconcile_documents_step
 from .extract_documents import extract_documents_step
