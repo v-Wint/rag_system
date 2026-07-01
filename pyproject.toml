@@ -25,3 +25,4 @@ pythonpath = ["."]
 
 [tool.poe.tasks]
 test = "pytest tests/"
+mongo = "uv run -m tools.mongo_connect"
