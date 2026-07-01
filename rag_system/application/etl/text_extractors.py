@@ -14,8 +14,8 @@ ETL_EXTRACTION_REPO = {
     FileType.MARKDOWN: _extract_md
 }
 def extract_text(path: Path) -> str:
-    f = ETL_EXTRACTION_REPO.get(path.suffix)
+    suffix = str(path.suffix)
+    f = ETL_EXTRACTION_REPO.get(FileType(suffix))
     if not f:
-        raise ValueError(f"Unsupported extension: {path.suffix}")
+        raise ValueError(f"Unsupported extension: {suffix}")
     return f(path)
-
