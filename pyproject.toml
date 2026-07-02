@@ -11,6 +11,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "pydantic-settings>=2.14.2",
     "pymongo>=4.17.0",
+    "sentence-transformers>=5.6.0",
     "tqdm>=4.68.3",
     "zenml[server]>=0.95.1",
 ]
