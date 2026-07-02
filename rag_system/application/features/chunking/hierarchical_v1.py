@@ -12,7 +12,7 @@ def _hierarchical_v1(
         max_tokens=1_00_000):
 
     if isinstance(doc_path, str):
-        doc_path = PurePosixPath(doc_path).as_posix().split('/')
+        doc_path = doc_path.split('/')
 
     leaf_node = SchemaNode()
     data_chunks = _split_chunks(text, doc_path, [], get_token_count, max_tokens, leaf_node)
