@@ -17,4 +17,4 @@ def crawl_document_paths_step(data_dir: str) -> Annotated[list[str], "document_p
     }
     log_metadata(metadata=metadata, infer_artifact=True)
     logger.info(f"Found {len(paths)} document(s).")
-    return [str(p) for p in paths]
+    return [p.as_posix() for p in paths]

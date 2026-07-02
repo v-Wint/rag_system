@@ -12,6 +12,8 @@ def clean_documents_step(
     documents: list[Document],
     cleaning_method: CleaningMethod,
 ) -> Annotated[list[Document], "cleaned_documents"]:
+    if not documents:
+        return []
     logger.info(f"Cleaning {len(documents)} document(s) with method '{cleaning_method}'.")
     cleaned = [doc.model_copy(update={"text": clean_text(doc.text, cleaning_method)}) for doc in tqdm(documents)]
     log_metadata(

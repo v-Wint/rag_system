@@ -24,3 +24,7 @@ class Chunk(BaseModel):
             embedding_text=embedding_text,
             content=text
         )
+
+class ChunkDocument(BaseModel):
+    chunk: Chunk
+    doc_hash: str

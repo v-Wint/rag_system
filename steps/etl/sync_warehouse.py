@@ -9,10 +9,17 @@ from rag_system.application.etl import reconcile
 
 
 @step(enable_cache=False)
-def sync_warehouse_step(data_dir: Path | str, absolute_paths: list[str]) -> Annotated[list[Document], "upserted_documents"]:
+def sync_warehouse_step(
+    data_dir: Path | str, 
+    absolute_paths: list[str]
+) -> tuple[
+    Annotated[list[Document], "upserted_documents"],
+    Annotated[list[str], "deleted_paths_relative"]
+]:
     logger.info(f"Reconciling {len(absolute_paths)} files against warehouse")
 
     mongo_init()
+    data_dir = Path(data_dir).resolve()
 
     warehouse_hashes = Document.get_all_path_hash_pairs()
     logger.info(f"Loaded {len(warehouse_hashes)} documents from warehouse")
@@ -36,9 +43,12 @@ def sync_warehouse_step(data_dir: Path | str, absolute_paths: list[str]) -> Anno
         "modified": modified,
         "created": created,
         "unchanged": len(unchanged_files),
-        "new_paths": [d.path for d in new_files],
-        "changed_paths": [d.path for d in changed_files],
+        "new_paths": [d.relative_path for d in new_files],
+        "changed_paths": [d.relative_path for d in changed_files],
         "deleted_paths": to_delete,
     })
 
-    return to_upsert
+    deleted_relative = [
+        str(Path(p).relative_to(data_dir)) for p in to_delete
+    ]
+    return to_upsert, deleted_relative
