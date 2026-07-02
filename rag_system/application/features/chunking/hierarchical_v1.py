@@ -109,8 +109,12 @@ def shorten_line(line: str, max_len: int = 50) -> str:
 
 def title_body_split(text: str) -> tuple[str, str]:
     parts = text.split('\n')
+    i = 0
     title = shorten_line(clean_line(parts[0]))
-    body = '\n'.join(parts[1:])
+    while len(parts) > i and not title.strip().strip('.'):
+        title = shorten_line(clean_line(parts[i]))
+        i += 1
+    body = '\n'.join(parts[i+1:])
     return title, body
 
 def split_by_bullet(text, max_depth=50):
