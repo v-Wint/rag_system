@@ -9,7 +9,7 @@ from rag_system.application.features import CleaningMethod, ChunkingMethod
 
 from steps.features import (
     get_changed_step, clean_documents_step, 
-    chunk_documents_step, embed_load_chunks_step)
+    chunk_documents_step, embed_load_chunks_step, truncate_save_schema_step)
 
 
 class FeaturePipelineConfig(BaseModel):
@@ -17,6 +17,7 @@ class FeaturePipelineConfig(BaseModel):
     chunking_method: ChunkingMethod = ChunkingMethod.HIERARCHICAL_V1
     embedding_model: str = settings.TEXT_EMBEDDING_MODEL_ID
     max_tokens: Optional[int] = None
+    max_schema_tokens: Optional[int] = 2048
 
     @model_validator(mode="after")
     def resolve(self):
@@ -35,6 +36,10 @@ class FeaturePipelineConfig(BaseModel):
                 f"of {upper_limit_tokens} for embedding_model={self.embedding_model!r} "
                 f"(embedder max_seq_length-derived limit, capped by settings.MAX_CHUNK_SIZE_TOKENS)"
             )
+
+        if not self.max_schema_tokens:
+            self.max_schema_tokens = settings.MAX_SCHEMA_TOKENS
+        
         return self
 
     @property
@@ -45,6 +50,8 @@ class FeaturePipelineConfig(BaseModel):
 
     def get_collection_name(self, prefix: str = "chunks") -> str:
         parts = [prefix, self.cleaning_method, self.chunking_method, self.safe_model_slug, str(self.max_tokens)]
+        if self.max_schema_tokens:
+            parts.append(str(self.max_schema_tokens))
         return "__".join(parts)
 
 
@@ -68,6 +75,10 @@ def feature_pipeline(
 
     embed_load_chunks_step(
         chunks, to_delete_rel, config.embedding_model, config.get_collection_name()
+    )
+
+    truncate_save_schema_step(
+        schema, config.embedding_model, config.max_schema_tokens, config.get_collection_name()
     )
 
 

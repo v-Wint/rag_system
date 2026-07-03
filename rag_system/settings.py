@@ -8,6 +8,7 @@ class Settings(BaseSettings):
 
     TEXT_EMBEDDING_MODEL_ID: str = "intfloat/multilingual-e5-base"
     MAX_CHUNK_SIZE_TOKENS: int = 2048
+    MAX_SCHEMA_TOKENS: int = 1024
 
     QDRANT_DATABASE_HOST: str = "127.0.0.1"
     QDRANT_DATABASE_PORT: int = 6333
@@ -18,6 +19,7 @@ class Settings(BaseSettings):
 
     MONGO_DOCUMENT_MODELS: list[str] = [
         "rag_system.domain.documents.Document",
+        "rag_system.domain.schema.SchemaText",
     ]
 
     @classmethod

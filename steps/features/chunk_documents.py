@@ -3,6 +3,7 @@ from tqdm import tqdm
 from typing_extensions import Annotated
 from zenml import step, log_metadata
 from rag_system.domain import Document, SchemaNode, ChunkDocument
+from rag_system.domain.schema import unite_schemas
 from rag_system.application.features import chunk_document, ChunkingMethod
 from rag_system.infrastructure import Embedder
 
@@ -28,7 +29,7 @@ def chunk_documents_step(
     )
 
     chunk_list: list[ChunkDocument] = []
-    schema: SchemaNode | None = None
+    schema_list: list[SchemaNode] = []
 
     for document in tqdm(documents, desc="Chunking documents"):
         chunks, schema = chunk_document(
@@ -40,6 +41,8 @@ def chunk_documents_step(
         )
         cds = [ChunkDocument(chunk=chunk, doc_hash=document.hash) for chunk in chunks]
         chunk_list += cds
+        if schema:
+            schema_list.append(schema)
 
     logger.info(f"Produced {len(chunk_list)} chunks from {len(documents)} documents")
 
@@ -55,4 +58,4 @@ def chunk_documents_step(
         infer_artifact=True
     )
 
-    return chunk_list, schema
+    return chunk_list, unite_schemas(schema_list)
