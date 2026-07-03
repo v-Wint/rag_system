@@ -111,9 +111,9 @@ def title_body_split(text: str) -> tuple[str, str]:
     parts = text.split('\n')
     i = 0
     title = shorten_line(clean_line(parts[0]))
-    while len(parts) > i and not title.strip().strip('.'):
-        title = shorten_line(clean_line(parts[i]))
+    while i < len(parts) - 1 and not title.strip().strip('.'):
         i += 1
+        title = shorten_line(clean_line(parts[i]))
     body = '\n'.join(parts[i+1:])
     return title, body
 
@@ -158,6 +158,6 @@ def split(text):
         chunks = split_by_newlines(text)
     if len(chunks) == 1:
         chunks = [c for c in text.split(' ') if c]
-    if len(chunks) == 1:
+    if len(chunks) <= 1:
         raise ValueError(f"Could not split: {chunks}")
     return chunks

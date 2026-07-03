@@ -30,7 +30,7 @@ def fix_inline_code_fences(text: str) -> str:
 def _clean_remnote_v1(text: str) -> str:
     text = re.sub(r'!\[.*?\]\(.*?\)', '<img>', text)
     # 1. Remove all property/formatting command tokens
-    text = re.sub(r'[\s;]*-?\s*\[[^\]]*\]\([^)]*\)(;-\S+)?', '', text)
+    text = re.sub(r'[\s;]*-?\s*\[[^\]]*\]\([^)]*\);-\S+', '', text)
     
     # 2. Remove portal header (link text after it gets handled in step 4)
     text = text.replace("--------------------- Portal ---------------------", "")
