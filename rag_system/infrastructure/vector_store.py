@@ -22,24 +22,32 @@ def get_qdrant_client() -> QdrantClient:
 class VectorStore(QdrantVectorStore):
     _instances: dict[str, "VectorStore"] = {}
 
-    def __init__(self, collection_name, embedding):
+    def __init__(self, collection_name: str, embedding, create_if_missing: bool = True):
         client = get_qdrant_client()
-        
+
         if not client.collection_exists(collection_name=collection_name):
-            client.create_collection(
-                collection_name=collection_name,
-                vectors_config=VectorParams(
-                    size=embedding.vector_size,
-                    distance=Distance.COSINE
-                ),
-            )
-            
+            if create_if_missing:
+                client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=VectorParams(
+                        size=embedding.vector_size,
+                        distance=Distance.COSINE,
+                    ),
+                )
+            else:
+                raise ValueError(
+                    f"Collection '{collection_name}' does not exist. "
+                    f"Run the feature pipeline before querying."
+                )
+
         super().__init__(client=client, collection_name=collection_name, embedding=embedding)
 
     @classmethod
-    def from_collection_name(cls, collection_name: str, embedding) -> "VectorStore":
+    def from_collection_name(
+        cls, collection_name: str, embedding, create_if_missing: bool = True
+    ) -> "VectorStore":
         if collection_name not in cls._instances:
-            cls._instances[collection_name] = cls(collection_name, embedding)
+            cls._instances[collection_name] = cls(collection_name, embedding, create_if_missing)
         return cls._instances[collection_name]
 
     def get_all_path_hash_pairs(self) -> dict[str, str]:

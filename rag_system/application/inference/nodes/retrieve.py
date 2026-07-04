@@ -11,7 +11,7 @@ def make_retrieve_node(
     reranking_size: int,
 ):
     embedder = Embedder(embedding_model)
-    store = VectorStore(collection_name, embedder)
+    store = VectorStore.from_collection_name(collection_name, embedder, False)
     base_retriever = store.as_retriever(search_kwargs={"k": vector_retrieval_size})
     cross_encoder = CrossEncoder(cross_encoder_model)
 
