@@ -10,12 +10,18 @@ class Settings(BaseSettings):
     MAX_CHUNK_SIZE_TOKENS: int = 2048
     MAX_SCHEMA_TOKENS: int = 1024
 
+    CROSS_ENCODER_MODEL_ID: str = "BAAI/bge-reranker-base"
+
     QDRANT_DATABASE_HOST: str = "127.0.0.1"
     QDRANT_DATABASE_PORT: int = 6333
 
     HUGGINGFACE_ACCESS_TOKEN: str | None = None 
     TEXT_EMBEDDING_DEVICE: str = "cpu"
 
+    GROQ_API_KEY: str | None = None
+
+    PREPROCESSING_MODEL_ID: str = "llama-3.3-70b-versatile"
+    LLM_MODEL_ID: str = "openai/gpt-oss-120b"
 
     MONGO_DOCUMENT_MODELS: list[str] = [
         "rag_system.domain.documents.Document",
