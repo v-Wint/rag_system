@@ -9,7 +9,7 @@ from rag_system.application.features import CleaningMethod, ChunkingMethod
 
 from steps.features import (
     get_changed_step, clean_documents_step, 
-    chunk_documents_step, embed_load_chunks_step, truncate_save_schema_step)
+    chunk_documents_step, embed_load_chunks_step, prune_save_schema_step)
 
 
 class FeaturePipelineConfig(BaseModel):
@@ -73,7 +73,7 @@ def feature_pipeline(
         cleaned_documents, config.chunking_method, config.embedding_model, config.max_tokens
     )
 
-    truncate_save_schema_step(
+    prune_save_schema_step(
         schema, config.embedding_model, config.max_schema_tokens, config.get_collection_name()
     )
 

@@ -23,6 +23,21 @@ class SchemaNode(BaseModel):
             children=[child.truncated(depth - 1) for child in self.children],
         )
 
+    def height(self) -> int:
+        if not self.children:
+            return 0
+        return 1 + max(child.height() for child in self.children)
+
+    def pruned(self, rounds: int) -> 'SchemaNode':
+        return SchemaNode(
+            title=self.title,
+            children=[
+                child.pruned(rounds - 1)
+                for child in self.children
+                if child.height() >= rounds
+            ],
+        )
+
     def __str__(self):
         return self._to_str()
 

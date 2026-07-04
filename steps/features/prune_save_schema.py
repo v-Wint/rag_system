@@ -6,7 +6,7 @@ from rag_system.domain import SchemaNode, SchemaText
 from rag_system.infrastructure import Embedder, mongo_init
 
 @step(enable_cache=False)
-def truncate_save_schema_step(
+def prune_save_schema_step(
     schema: SchemaNode | None,
     embedding_model: str,
     max_schema_tokens: int | None,
