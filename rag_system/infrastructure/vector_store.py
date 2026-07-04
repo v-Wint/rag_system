@@ -103,11 +103,3 @@ class VectorStore(QdrantVectorStore):
                         )])
             ),
         )
-
-    def upsert_chunks(self, cds: list[ChunkDocument], **kwargs):
-        if not cds:
-            return
-
-        paths_to_sweep = list({"/".join(cd.chunk.doc_path) for cd in cds})
-        self.delete_by_relative_paths(paths_to_sweep)
-        return self.add_chunks(cds, **kwargs)

@@ -25,8 +25,10 @@ def embed_load_chunks_step(
         f"Saving {len(chunks)} chunks with embedding_model={embedding_model}, collection_name={collection_name}"
     )
 
+    store.delete_by_relative_paths(list({"/".join(cd.chunk.doc_path) for cd in chunks}))
+
     for batch in tqdm(list(batch_iterate(batch_size, chunks))):
-        store.upsert_chunks(batch)
+        store.add_chunks(batch)
 
     logger.info(f"Saved {len(chunks)} chunks to collection '{collection_name}'.")
 
