@@ -71,5 +71,4 @@ class SchemaText(BunnetDocument):
         ).upsert(
             Set({SchemaText.text: self.text}),
             on_insert=self,
-        )
-
+        ).run()
