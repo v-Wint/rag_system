@@ -5,7 +5,7 @@ from rag_system.application.inference import build_graph, RAGState, RAGConfig
 
 from steps.inference import inference_step
 
-@pipeline
+@pipeline(enable_cache=False)
 def inference_pipeline(query: str, config: RAGConfig) -> str:
     return inference_step(config, query)
 
