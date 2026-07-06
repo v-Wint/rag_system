@@ -11,6 +11,6 @@ def mongo_init() -> MongoClient:
         _client = MongoClient(settings.DATABASE_HOST)
         init_bunnet(
             database=_client[settings.DATABASE_NAME],
-            document_models=settings.MONGO_DOCUMENT_MODELS
+            document_models=settings.MONGO_DOCUMENT_MODELS # type: ignore
         )
     return _client

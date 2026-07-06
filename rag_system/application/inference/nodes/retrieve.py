@@ -1,5 +1,4 @@
-from sentence_transformers import CrossEncoder
-from rag_system.infrastructure import VectorStore, Embedder
+from rag_system.infrastructure import VectorStore, Embedder, CrossEncoder
 from ..state import RAGState
 
 
@@ -13,7 +12,7 @@ def make_retrieve_node(
     embedder = Embedder.from_pretrained(embedding_model)
     store = VectorStore.from_collection_name(collection_name, embedder, False)
     base_retriever = store.as_retriever(search_kwargs={"k": vector_retrieval_size})
-    cross_encoder = CrossEncoder(cross_encoder_model)
+    cross_encoder = CrossEncoder.from_pretrained(cross_encoder_model)
 
     def retrieve_node(state: RAGState) -> dict:
         candidates = base_retriever.invoke(state.improved_query or state.query)
