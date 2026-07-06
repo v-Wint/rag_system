@@ -10,7 +10,7 @@ def make_retrieve_node(
     cross_encoder_model: str,
     reranking_size: int,
 ):
-    embedder = Embedder(embedding_model)
+    embedder = Embedder.from_pretrained(embedding_model)
     store = VectorStore.from_collection_name(collection_name, embedder, False)
     base_retriever = store.as_retriever(search_kwargs={"k": vector_retrieval_size})
     cross_encoder = CrossEncoder(cross_encoder_model)
@@ -27,13 +27,13 @@ def make_retrieve_node(
         retrieval_debug = {
             "candidates": [
                 {
-                    "id": doc.metadata.get("id"),
+                    "id": doc.metadata.get('_id'),
                     "score": float(score),
                     "preview": doc.page_content[:120],
                 }
                 for doc, score in ranked
             ],
-            "selected_ids": [doc.metadata.get("id") for doc, _ in top],
+            "selected_ids": [doc.metadata.get('_id') for doc, _ in top],
         }
 
         return {
