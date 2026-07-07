@@ -5,7 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
 
-from ..state import RAGState
+from rag_system.domain import RAGState
 from rag_system.settings import settings
 
 

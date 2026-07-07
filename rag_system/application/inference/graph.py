@@ -1,8 +1,7 @@
 from langgraph.graph import StateGraph, END
 
 from . import nodes
-from .state import RAGState
-from .config import RAGConfig
+from rag_system.domain import RAGState, RAGConfig
 
 
 def build_graph(config: RAGConfig):
@@ -85,6 +84,20 @@ def build_graph(config: RAGConfig):
     graph.add_edge("answer_general", END)
 
     return graph.compile()
+
+
+instances = {}
+
+def get_graph(config: RAGConfig):
+    hash_value = hash(config)
+    instance = instances.get(hash_value)
+
+    if not instance:
+        instances[hash_value] = build_graph(config)
+        return instances[hash_value]
+
+    return instance
+
 
 
 if __name__ == '__main__':

@@ -7,8 +7,8 @@ from langchain_groq import ChatGroq
 
 from rag_system.settings import settings
 
-from ..schema_retriver import SchemaRetriever
-from ..state import RAGState, QuestionType
+from rag_system.infrastructure.schema_retriver import SchemaRetriever
+from rag_system.domain import RAGState, QuestionType
 
 
 class QueryAnalysis(BaseModel):

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict
 
 from rag_system.settings import settings
 
@@ -21,3 +21,5 @@ class RAGConfig(BaseModel):
     llm_fact_template: str = "templates/fact.txt"
     llm_schema_template: str = "templates/schema.txt"
     llm_general_template: str = "templates/general.txt"
+
+    model_config = ConfigDict(frozen=True)

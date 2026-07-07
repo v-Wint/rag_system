@@ -1,5 +1,5 @@
 from rag_system.infrastructure import VectorStore, Embedder, CrossEncoder
-from ..state import RAGState
+from rag_system.domain import RAGState
 
 
 def make_retrieve_node(
@@ -28,7 +28,7 @@ def make_retrieve_node(
                 {
                     "id": doc.metadata.get('_id'),
                     "score": float(score),
-                    "preview": doc.page_content[:120],
+                    "preview": doc.page_content[:512],
                 }
                 for doc, score in ranked
             ],
