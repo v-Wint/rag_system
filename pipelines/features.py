@@ -17,7 +17,7 @@ class FeaturePipelineConfig(BaseModel):
     chunking_method: ChunkingMethod = ChunkingMethod.HIERARCHICAL_V1
     embedding_model: str = settings.TEXT_EMBEDDING_MODEL_ID
     max_tokens: Optional[int] = None
-    max_schema_tokens: Optional[int] = 1024
+    max_schema_tokens: Optional[int] = 2048
 
     @model_validator(mode="after")
     def resolve(self):
@@ -69,16 +69,17 @@ def feature_pipeline(
         raw_documents, config.cleaning_method
     )
 
-    chunks, schema = chunk_documents_step(
+    chunks, schemas = chunk_documents_step(
         cleaned_documents, config.chunking_method, config.embedding_model, config.max_tokens
     )
 
     prune_save_schema_step(
-        schema, config.embedding_model, config.max_schema_tokens, config.get_collection_name()
+        schemas, to_delete_rel, config.embedding_model, config.max_schema_tokens, config.get_collection_name()
     )
 
     embed_load_chunks_step(
-        chunks, to_delete_rel, config.embedding_model, config.get_collection_name()
+        chunks, to_delete_rel, config.embedding_model, config.get_collection_name(), 
+        after="prune_save_schema_step"
     )
 
 if __name__ == '__main__':

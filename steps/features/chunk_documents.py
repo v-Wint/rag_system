@@ -3,7 +3,6 @@ from tqdm import tqdm
 from typing_extensions import Annotated
 from zenml import step, log_metadata
 from rag_system.domain import Document, SchemaNode, ChunkDocument
-from rag_system.domain.schema import unite_schemas
 from rag_system.application.features import chunk_document, ChunkingMethod
 from rag_system.infrastructure import Embedder
 
@@ -16,10 +15,10 @@ def chunk_documents_step(
     max_tokens: int
 ) -> tuple[
     Annotated[list[ChunkDocument], "chunks"],
-    Annotated[SchemaNode | None, "document_schema"]
+    Annotated[list[SchemaNode], "document_schemas"]
 ]:
     if not documents:
-        return [], None
+        return [], []
 
     embedder = Embedder.from_pretrained(embedding_model)
 
@@ -58,4 +57,4 @@ def chunk_documents_step(
         infer_artifact=True
     )
 
-    return chunk_list, unite_schemas(schema_list)
+    return chunk_list, schema_list

@@ -6,15 +6,6 @@ from pymongo import IndexModel
 class SchemaNode(BaseModel):
     title: str = ''
     children: list['SchemaNode'] = []
-
-    def _to_str(self, depth=0):
-        lines = []
-        if self.title:
-            lines.append('    ' * depth + '- ' + self.title)
-        for child in self.children:
-            lines.append(child._to_str(depth + 1))
-        return '\n'.join(lines)
-
     def truncated(self, depth: int) -> 'SchemaNode':
         if depth <= 0:
             return SchemaNode(title=self.title, children=[])
@@ -38,16 +29,21 @@ class SchemaNode(BaseModel):
             ],
         )
 
+    def _to_str(self, depth=0):
+        lines = []
+        if self.title:
+            lines.append('  ' * depth + '- ' + self.title)
+        for child in self.children:
+            lines.append(child._to_str(depth + 1))
+        return '\n'.join(lines)
+
     def __str__(self):
         return self._to_str()
 
 SchemaNode.model_rebuild()
 
 
-def unite_schemas(schemas: list[SchemaNode], root_title: str = 'root') -> SchemaNode | None:
-    if not schemas:
-        return None
-
+def unite_schemas(schemas: list[SchemaNode], root_title: str = 'root') -> SchemaNode :
     root = SchemaNode(title=root_title, children=[])
 
     def merge_into(target: SchemaNode, source: SchemaNode) -> None:
@@ -66,6 +62,7 @@ def unite_schemas(schemas: list[SchemaNode], root_title: str = 'root') -> Schema
 
 
 class SchemaText(BunnetDocument):
+    root: SchemaNode
     text: str
     collection: str
 
@@ -74,11 +71,6 @@ class SchemaText(BunnetDocument):
         indexes = [
             IndexModel("collection", unique=True),
         ]
-
-    @classmethod
-    def from_schema_node(cls, schema_node: SchemaNode, collection):
-        return cls(text=str(schema_node), collection=collection)
-
 
     def upsert(self):
         SchemaText.find_one(
