@@ -20,12 +20,13 @@ class Settings(BaseSettings):
 
     GROQ_API_KEY: str | None = None
 
-    PREPROCESSING_MODEL_ID: str = "llama-3.3-70b-versatile"
+    PREPROCESSING_MODEL_ID: str = "meta-llama/llama-4-scout-17b-16e-instruct"
     LLM_MODEL_ID: str = "openai/gpt-oss-120b"
 
     MONGO_DOCUMENT_MODELS: list[str] = [
         "rag_system.domain.documents.Document",
         "rag_system.domain.schema.SchemaText",
+        "rag_system.domain.eval_prediction.EvalPrediction",
     ]
 
     @classmethod

@@ -1,0 +1,151 @@
+[
+    {
+        "id": "schema_01",
+        "question_type": "schema-question",
+        "user_input": "What did I study during my fourth year, first semester?",
+        "reference": "In semester 4.1, you took courses on System Modeling (Моделювання систем), Software Security (Безпека ПЗ), Data Science (Наука про дані), Web Infrastructure (WEB-інфраструктура), and an item marked 'Old modelling'"
+    },
+    {
+        "id": "schema_02",
+        "question_type": "schema-question",
+        "user_input": "What topics did I learn on my own outside of my official university study notes?",
+        "reference":"Outside of your university curriculum, you have a dedicated Learning notes section focused on practical industry skills. This includes Quantitative Finance & Algorithmic Trading, Practical Statistics for Data Scientists, Python for Data Science, Machine Learning with Time Series, Deep library deep-dives (Numpy, Xarray), Natural Language Processing (NLP), version control with GIT, regular expressions (REGEX), Databases (SQL, NOSQL), Cloud technologies (AWS, Azure), Docker/Docker-compose, and Django development"
+    },
+    {
+        "id": "schema_03",
+        "question_type": "schema-question",
+        "user_input": "Do I have any notes on Docker environment variables or how to run shell commands in a container?",
+        "reference":"Yes. In your Learning notes under Docker, docker-compose, you have notes indicating that .env files are used for environment variables. You also have a specific note on running commands: CMD python app.py # shell form — runs via /bin/sh"
+    },
+    {
+        "id": "schema_04",
+        "question_type": "schema-question",
+        "user_input": "Where are my notes regarding preparation for the master's exam?",
+        "reference":"Your preparation notes are located under Notes.md -> Study notes -> ЄФВВ. This section contains notes on Algorithms and Computational Complexity (Алгоритми та обчислювальна складність), Computer Systems Architecture (Архітектура обчислювальних систем), and Data Warehousing (Сховища даних)."
+    },
+    {
+        "id": "schema_05",
+        "question_type": "schema-question",
+        "user_input": "What academic milestones and subjects was I focusing on around early 2025?",
+        "reference":"Around early 2025, you were wrapping up your final undergraduate semester (Semester 4.2) and preparing for your Master's entrance exam (ЄФВВ). Your work was split between your Bachelor's thesis (Диплом), studying LISP, and reviewing core computer science fundamentals for the exam—specifically Algorithms & Computational Complexity, Computer Systems Architecture, and Data Warehousing."
+    },
+    {
+        "id": "schema_06",
+        "question_type": "schema-question",
+        "user_input": "Where should I go to review my database notes?",
+        "reference":"Your database notes are split across your academic coursework and your practical self-study sections:\nAcademic Foundations: Look under Notes.md -> Study notes -> 2.1 -> БД (or Бази даних) for your university coursework. For advanced data architectures, check Semester 2.2 and your exam prep (ЄФВВ), which both contain notes on Data Warehousing (Сховища даних).\n  Practical SQL Syntax: Go to Notes.md -> Learning notes -> SQL. This section covers actual query implementation, including window functions (OVER), HAVING, UNION, and indexing. You also have a NOSQL section right below it if you need non-relational notes." },
+    {
+        "id": "schema_07",
+        "question_type": "schema-question",
+        "user_input": "Based on my notes, what is the extent of my hands-on DevOps and backend deployment experience?",
+        "reference":"Your practical backend and DevOps experience includes Git (specifically mastering rebase, merge, and resetting the HEAD), Docker and Docker-compose (handling anonymous volumes, container commands, and environment files), and Cloud infrastructure across AWS and Azure. On the backend development side, you have structured notes on Django, specifically REST framework architecture, serializers, permissions, and authentication."
+    },
+    {
+        "id": "schema_08",
+        "question_type": "schema-question",
+        "user_input": "What topics am I testing myself at?",
+        "reference":"Under your dedicated testing section in your learning notes, you are currently testing yourself on practical statistics for data science, Python for data science, Bayesian statistics, and natural language processing."
+    },
+    {
+        "id": "schema_09",
+        "question_type": "schema-question",
+        "user_input": "How does the depth of my machine learning and data science notes differ between what I covered in my university semesters versus my independent learning?",
+        "reference":"Your university notes treat data science primarily as an academic subject, focusing on foundational theory like Probability Theory in semester 2.1, Data Mining in 2.2, and System Modeling in 4.1. In contrast, your independent learning notes bypass abstract theory to focus entirely on production implementation, covering specific data-wrangling libraries like Xarray and Pandas, time-series forecasting, automated ML pipelines, and production frameworks like ZenML and the LLM Cookbook."
+    },
+    {
+        "id": "schema_10",
+        "question_type": "schema-question",
+        "user_input": "I feel like my Python and data science notes are fragmented. Which libraries or tools have I taken duplicate notes on across different courses?",
+        "reference":"Your notes are highly duplicated around the core Python data science stack. You have overlapping notes on Numpy and Pandas split across three distinct sections: your formal Data Science course under Programming, your standalone Python for Data Science self-study guide, and your Machine Learning Time Series module. Furthermore, your statistics notes are similarly split between university Probability Theory and your practical statistics self-study."
+    },
+    {
+        "id": "general_01",
+        "question_type": "general-question",
+        "user_input": "Hey there. Let's get to work.",
+        "reference":"Hello! I'm ready when you are. What project, notes, or topics are we diving into today?"
+    },
+    {
+        "id": "general_02",
+        "question_type": "general-question",
+        "user_input": "Hewwwwoooo",
+        "reference":"Hello! How can I assist you?"
+    },
+    {
+        "id": "general_03",
+        "question_type": "general-question",
+        "user_input": "What is the capital of France",
+        "reference":"The capital of France is Paris"
+    },
+    {
+        "id": "general_04",
+        "question_type": "general-question",
+        "user_input": "What's up?",
+        "reference":"Nothing much. Ready to ask questions?"
+    },
+    {
+        "id": "general_05",
+        "question_type": "general-question",
+        "user_input": "What are you and what can you do here?",
+        "reference":"I am an AI assistant designed to help you interact with your personal knowledge base. I can help you locate specific information, summarize technical concepts, synthesize code syntax, or simply answer general questions right here in the chat."
+    },
+    {
+        "id": "fact_01",
+        "question_type": "fact-question",
+        "user_input": "What is encapsulation?",
+        "reference": "Encapsulation involves a concept that allows something to be contained in a capsule, some of which you can access from the outside and some which you cannot. It is a key idea that underlies object-oriented modeling and programming, occurring when attributes and behaviors are gathered together into their own section of code called a class.\n It is defined by three core ideas:\nBundles attributes and behaviors: It combines attribute values (data) and behaviors (functions) into a self-contained object. This allows distinct objects created from a particular class to have their own data values for the attributes and exhibit resulting behaviors, locating the data and the code that manipulates it in the same place. Additionally, an object's data should only contain what is relevant for that object.\nExposes through an interface: It provides the ability to \"expose\" certain data and functions of that object, which can be accessed from other objects, usually through an interface.\nRestricts access: It provides the ability to \"restrict\" access to certain data and functions to only within the object.\nThe Power of \"Black Box\" Thinking Because access to the class and its implementation are separated, encapsulation achieves an abstraction barrier through black box thinking, where the internal workings of a class are not relevant to the outside world. This provides three direct benefits:\nChangeable Implementation: The implementation of attributes and methods can change, but the accessible interface of a class remains the same. Users do not need to worry about how the computation steps work behind the interface—what happens in the box to achieve an expected behavior doesn't matter, as long as it is possible to provide inputs and obtain outputs by calling methods.\nIntegrity and Security: Restricting outside access means data cannot be changed through variable assignments, preventing assumptions or dependencies from breaking for the data within an object. Likewise, it helps keep sensitive information from being revealed, even from queries that rely on sensitive data to provide answers.\nIncreased Reusability: It keeps software modular and easy to work with. Another class only needs to know the right method to call to get a desired behavior, what arguments to supply as inputs, and what appear as outputs or effects."
+    },
+    {
+        "id": "fact_02",
+        "question_type": "fact-question",
+        "user_input": "What types of network equipment there are?",
+        "reference": "Based strictly on the provided data, network equipment is classified into end devices and intermediate devices, alongside transmission media and virtual network types:\n1. End Devices (Nodes/Hosts)\nTerminal devices that act as the source or destination of data.\n PCs / Virtual Machines (VMs): The computing systems connected to the network.\nNetwork Interface Cards (NICs): LAN adapters on PCs and router ports. Every NIC port has a unique physical MAC Address.\n2. Intermediate Devices\nHardware that connects nodes and controls traffic across layers:\nLayer 2 (L2) Devices\nHub: Sends input frames to everybody, causing collisions when two frames enter at once. Connected PCs form a collision domain.\nL2 Bridge: Breaks a collision domain in half. Uses a MAC address table to track which MACs are reachable from each port.\nSwitch (Ethernet Switch): Uses a MAC address table to send frames directly to their destination port. Each port is its own collision domain, but the entire switch is a broadcast domain. When broadcasts overflow the MAC table, a router is needed.\nWireless Access Points: Intermediate devices providing wireless connectivity.\nLayer 3 (L3) & Security Devices\nRouter: Connects switches (segments), splits them into subnets, and routes data as datagrams. Switches forward traffic to the router's default gateway port, and the router uses its route table to direct it.\nHardware Firewalls: Intermediate infrastructure devices used for network security.\n3. Transmission Media & Topologies\nThe physical components that carry data:\nMedia types: Copper cables (UTP), fiber-optic cables (Optical cabling), and wireless.\nPhysical Topology: Maps the physical arrangement of devices and cables.\nLogical Topology: Maps the logical structure of devices, ports, and IP addresses.\n4. Virtual Networking Configurations\nSoftware-defined network setups used by Virtual Machines:\nBridged Network: The host server and VM connect to the same network and share the host's IP address.\nNAT (Network Address Translation): VMs run on a private network and connect externally via a NAT device that translates the host's IP.\nHost-only Network: VMs are isolated on a private host network with no translated IP, meaning they can only communicate with other VMs on that host."
+    },
+    {
+        "id": "fact_03",
+        "question_type": "fact-question",
+        "user_input": "Top 10 most important commands in docker cli",
+        "reference": "Top 10 Docker CLI commands (as highlighted in your notes)\ndocker build -t <name>:<tag> . - Build an image from a Dockerfile and tag it (e.g., docker build -t myapp:1.0 .).\ndocker run … - Create and start a container. Common options you use:\n-d (detached)\n-p host:container (port mapping)\n-e VAR=value (environment)\n--name <container> (give it a name)\ndocker ps (add -a to see stopped containers) - List running (or all) containers.\ndocker stop / start / restart / rm - Manage container lifecycle: stop, start, restart, or remove a container.\ndocker logs [-f] <container> - View a container's output; -f follows the log stream.\ndocker exec -it <container> <cmd> - Run a command inside a running container (e.g., docker exec -it myapp bash).\ndocker images - List locally-available images.\ndocker compose up --build -d - Build (if needed) and start all services defined in docker-compose.yml in detached mode.\ndocker compose down -v - Stop the compose stack and remove the containers and any anonymous volumes they created.\ndocker network create <network> (and docker network ls) - Create a user-defined network and list existing networks; containers can be attached with --network <network>."
+    },
+    {
+        "id": "fact_04",
+        "question_type": "fact-question",
+        "user_input": "Dockerfile commands",
+        "reference": "The Dockerfile instructions mentioned in your notes are:\nFROM - selects the base image.\nWORKDIR - sets the working directory inside the image.\nCOPY (or ADD for URLs) - copies files/directories into the image.\nRUN - executes a command while building the image, creating a new layer.\nCMD - specifies the default command to run when a container starts (can be overridden with docker run).\nENTRYPOINT - defines a fixed executable; arguments can be supplied via CMD.\nENV - sets environment variables.\nEXPOSE - documents which ports the container listens on.n\nARG - defines build-time variables (passed with --build-arg).\nUSER - sets the user that the container will run as.\nLABEL - adds metadata to the image.\nHEALTHCHECK - defines how Docker checks whether the container is healthy."
+    },
+    {
+        "id": "fact_05",
+        "question_type": "fact-question",
+        "user_input": "Likelihood is like probability of hypothesis given evidence?",
+        "reference": "No, the likelihood is not the probability of hypothesis given evidence—**the likelihood $P(E \\mid H)$ is the probability of observing the evidence if the hypothesis ($H$) were true.**\nThe probability of the hypothesis after seeing the evidence—the posterior $P(H \\mid E)$—is obtained by combining the likelihood with the prior probability of the hypothesis $P(H)$ and normalising by the marginal likelihood $P(E)$:\n$$P(H \\mid E) = \\frac{P(E \\mid H) P(H)}{P(E)}$$\nThus, the posterior is proportional to the likelihood multiplied by the prior; the likelihood alone is not the probability of the hypothesis, but a component that updates the prior into the posterior."
+    },
+    {
+        "id": "fact_06",
+        "question_type": "fact-question",
+        "user_input": "classification metrics",
+        "reference": "Classification evaluation metrics:\nConfusion Matrix: A tabular summary tracking True Positives (TP), False Positives (FP), False Negatives (FN), and True Negatives (TN). It serves as the baseline data structure from which all standard classification-evaluation metrics are derived.\nAccuracy: The overall percentage of correct predictions calculated across all classes. Its utility is strictly conditional, relying heavily on the dataset being balanced to provide an objective measure of model performance.\nPrecision: The accuracy of positive predictions, evaluating the percentage of predicted 1s that are actually 1s. This metric prioritizes minimizing False Positives (FP) and ensuring reliability when overpredicting the positive class carries high costs, such as in spam filtering or invasive medical treatments.\nRecall (Sensitivity / True Positive Rate): The percentage of actual positive instances successfully captured by the model. It prioritizes minimizing False Negatives (FN) and maximizing sensitivity, making it the critical metric when missing a positive case is costly, such as in fraud detection or initial disease screening.\nNegative Predictive Value (NPV): The accuracy of negative predictions, evaluating the percentage of predicted 0s that are actually 0s. A high NPV indicates that the model's negative class assignments are statistically trustworthy.\nSpecificity (True Negative Rate): The accuracy of negative labels, measuring the percentage of actual 0s that the model correctly flags as 0. It assesses the model's ability to rule out the negative class without accidentally leaking false positives into the system.\nF1-Score: The harmonic mean of precision and recall. Unlike an arithmetic mean, it actively penalizes extreme imbalances between the two underlying metrics, providing a single robust evaluation score for skewed data.\nROC Curve: A graphical plot evaluating the dynamic trade-off between the False Positive Rate on the x-axis and the True Positive Rate on the y-axis across various classification thresholds. It is structurally dependent on balanced class distributions.\nPR Curve: A graphical plot tracking the trade-off between recall and specificity across changing probability cutoffs. It is generated by sorting records by predicted probability and calculating cumulative metrics, making it highly effective for handling unbalanced datasets.\nAUC (Area Under the ROC Curve): A single scalar metric measuring the aggregate classification performance across all possible thresholds. The value scales strictly from 0.5 for purely random baseline selection to 1.0 for perfect model discrimination.\nLift: A metric quantifying model efficiency over random chance by dividing precision by the base positive rate. It measures the concentration factor of target instances achieved inside a specific selection pool versus a blind guess.\nLift Curve / Decile Gains Chart: Visual evaluation tools mapping recall or cumulative gains against the percentage of samples selected. Performance is frequently discretized into ten segments using a decile gains chart to identify the exact threshold where model utility matches maximum ROI."
+    },
+    {
+        "id": "fact_07",
+        "question_type": "fact-question",
+        "user_input": "ML workflow checklist",
+        "reference": "Key steps in a machine learning workflow\n1. Define the problem & success metric\no Clarify whether the task is classification, regression, forecasting, etc.\no Identify the target variable and choose metrics that reflect the real world goal (e.g., RMSE/MAE/R² for regression, accuracy/F1/AUC for classification, cost sensitive measures when needed).\no Decide early if interpretability is required, as this will influence later choices.\n2. Collect and prepare the data\no Gather raw data from all relevant sources.\no Clean (handle missing values, outliers, inconsistencies) and transform it into a usable format.\no Perform any necessary aggregations or time series alignment.\n3. Decide on a validation strategy before any modeling\no Choose a scheme that matches the data structure: random k fold, group wise, or time series split.\no Implement the strategy early so that all downstream steps (feature engineering, hyper parameter tuning) respect it and avoid leakage.\no For hyper parameter tuning, use nested CV to keep the outer loop unbiased.\n4. Feature engineering (inside the validation folds)\no Create, select, or transform features within each training fold to prevent information leaking from the validation set.\no Watch for highly correlated features—problematic for linear models but often fine for tree based ensembles.\no Apply regularization (e.g., L1/L2, early stopping) to keep coefficients stable, especially when using polynomial or interaction terms.\n5. Train a simple baseline model\no Start with an interpretable model such as linear regression, logistic regression, or a shallow decision tree.\no Use it to verify that the pipeline and validation scheme work and to set a performance benchmark.\n6. Iterate with more complex models\no Experiment with richer algorithms (gradient boosting, neural nets, etc.) while keeping the same validation protocol.\no Tune hyper parameters using the inner CV loop; compare results against the baseline.\n7. Evaluate and interpret results\no Examine validation scores, fold to fold variance, and whether observed gains are statistically meaningful (small CV improvements can be noise).\no If interpretability matters, prune features, reduce polynomial degree, or prefer more transparent models.\n8. Finalize and deploy\no Retrain the chosen model on the full training data (still respecting the validation split for a final sanity check).\no Package the model, document the preprocessing steps, and set up monitoring to catch data drift or performance decay.\nKey considerations throughout\n• Leakage prevention - validation must come before any feature creation or target leakage.\n• Regularization - helps stabilize models and control over fitting, especially with many or high order features.\n• Correlation handling - be cautious with linear models; tree based ensembles tolerate correlated inputs better.\n• Robust validation - CV is generally more reliable than a single hold out split; nested CV guards against optimistic bias during tuning.\n• Interpretability vs. performance - balance model complexity with the need to explain predictions.\nFollowing these steps and keeping the above safeguards in mind yields a reproducible, reliable machine learning pipeline."
+    },
+    {
+        "id": "fact_08",
+        "question_type": "fact-question",
+        "user_input": "How to write window function in SQL?",
+        "reference": "**SQL window functions** are written with an **OVER** clause that defines the “window” of rows the function can see.\n\n### Basic syntax\n```sql\nSELECT\n    <columns>,\n    <window_function>(<expression>) OVER ( <window_spec> ) AS <alias>\nFROM <table>;\n```\n\n### Window specification (`OVER (…)`)\n| Clause | Meaning | Example |\n|--------|---------|---------|\n| **PARTITION BY <col>** | Splits the result set into independent groups (like a GROUP\u202fBY, but rows are still returned). | `SUM(amount) OVER (PARTITION BY customer_id)` |\n| **ORDER BY <col> [ASC|DESC]** | Gives the rows a logical order inside each partition; required for cumulative or ranking functions. | `SUM(amount) OVER (PARTITION BY customer_id ORDER BY created_at)` |\n| **No clause** | The function sees the entire result set as a single window. | `ROW_NUMBER() OVER (ORDER BY score DESC)` |\n\nYou can combine the two clauses, e.g.:\n\n```sql\nSUM(amount) OVER (PARTITION BY customer_id ORDER BY created_at)\n```\n\n### Common window functions and typical uses\n\n| Function | Typical use | Example |\n|----------|-------------|---------|\n| **SUM, AVG, COUNT, MIN, MAX** (aggregate) | Running totals, moving averages, etc. | `SUM(amount) OVER (PARTITION BY customer_id ORDER BY created_at)` – running total per customer |\n| **ROW_NUMBER()** | Assign a unique sequential number to rows; useful for “top‑N per group” without ties. | `ROW_NUMBER() OVER (PARTITION BY class_id ORDER BY score DESC) AS rn` |\n| **RANK()** | Rank rows; ties share the same rank and gaps appear (1,\u202f1,\u202f3…). | `RANK() OVER (ORDER BY score DESC)` |\n| **DENSE_RANK()** | Rank rows; ties share the same rank but no gaps (1,\u202f1,\u202f2…). | `DENSE_RANK() OVER (ORDER BY score DESC)` |\n| **LAG(col, offset, default)** | Look back\u202f`offset` rows in the same window; `default` is used when the lagged row is missing. | `LAG(amount, 3)`, `LAG(amount, 1, 0)` |\n| **LEAD(col, offset, default)** | Look forward\u202f`offset` rows; same default handling. | `LEAD(amount, 3)` |\n\n### Practical patterns from the notes\n\n* **Total per customer**  \n  ```sql\n  SELECT customer_id,\n         amount,\n         SUM(amount) OVER (PARTITION BY customer_id) AS customer_total\n  FROM orders;\n  ```\n\n* **Running total per customer (ordered by date)**  \n  ```sql\n  SELECT customer_id,\n         amount,\n         SUM(amount) OVER (PARTITION BY customer_id ORDER BY created_at) AS running_total\n  FROM orders;\n  ```\n\n* **Top\u202f3 rows in each class**  \n  ```sql\n  SELECT *\n  FROM (\n      SELECT *,\n             ROW_NUMBER() OVER (PARTITION BY class_id ORDER BY score DESC) AS rn\n      FROM students\n  ) t\n  WHERE rn <= 3;\n  ```\n\n* **Ranking with ties** – use `RANK()` (gapped) or `DENSE_RANK()` (no gaps).\n\n---\n\nIn summary, a window function is any function that appears with `OVER (…)`. The `OVER` clause may contain `PARTITION BY` to group rows and `ORDER BY` to order them within each group. This enables calculations such as running totals, ranking, and accessing preceding/following rows without collapsing the result set."
+    },
+    {
+        "id": "fact_09",
+        "question_type": "fact-question",
+        "user_input": "4+1 view model is named after whom",
+        "reference": "The 4+1 view model is named after Philippe Kruchten.  "
+    },
+    {
+        "id": "fact_10",
+        "question_type": "fact-question",
+        "user_input": "binary tree implementation in python",
+        "reference": "Here's what your notes already contain for two common ways to build a binary tree in Python.\n\n---\n\n## 1.\u202fObject-oriented style  \n\n```python\nclass BinaryTree:\n    def __init__(self, value):\n        self.key   = value      # the node's value\n        self.left  = None       # left child\n        self.right = None       # right child\n\n    # placeholder – you would add the logic that decides\n    # whether the new value goes left or right\n    def insert(self, value):\n        ...\n\n    def insertLeft(self, newNode):\n        if self.left is None:\n            self.left = BinaryTree(newNode)\n        else:\n            obj = BinaryTree(newNode)\n            obj.left = self.left\n            self.left = obj          # (the notes had a typo “ob”)\n\n    def insertRight(self, newNode):\n        if self.right is None:\n            self.right = BinaryTree(newNode)\n        else:\n            obj = BinaryTree(newNode)\n            obj.right = self.right\n            self.right = obj\n```\n\n* `__init__` creates a node with a key and empty children.  \n* `insertLeft`/`insertRight` either attach a new leaf or push the existing subtree down one level.  \n* The `insert` method is left as “…”; you would fill in the usual comparison-based logic (e.g., for a binary-search tree).\n\n---\n\n## 2.\u202fList-of-lists (functional) style  \n\n```python\ndef BinaryTree(r):\n    # root value, left subtree, right subtree\n    return [r, [], []]\n\ndef insert_left(root, new_branch):\n    t = root.pop(1)                     # current left subtree\n    if len(t) > 1:                      # non-empty subtree\n        root.insert(1, [new_branch, t, []])\n    else:\n        root.insert(1, [new_branch, [], []])\n    return root\n\ndef insert_right(root, new_branch):\n    t = root.pop(2)                     # current right subtree\n    if len(t) > 1:\n        root.insert(2, [new_branch, [], t])\n    else:\n        root.insert(2, [new_branch, [], []])\n    return root\n\ndef get_root_val(root):\n    return root[0]\n\ndef set_root_val(root, new_val):\n    root[0] = new_val\n\ndef get_left_child(root):\n    return root[1]\n\ndef get_rigth_child(root):   # typo kept from notes\n    return root[2]\n```\n\n* A tree is a list `[value, left, right]`.  \n* `insert_left` / `insert_right` replace the corresponding child, preserving any existing subtree.  \n* Helper functions read or modify the root and children.\n\n---\n\n### What's missing?\n\n* The OOP `insert` method body is not provided; you need to decide how values are placed (e.g., BST ordering).  \n* The list-based version does not include a traversal or search routine; you would add those as needed.\n\nWith these snippets you can start building, inserting, and accessing nodes in either style."
+    }
+]

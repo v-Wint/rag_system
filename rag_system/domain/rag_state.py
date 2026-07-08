@@ -12,7 +12,7 @@ class RAGState(BaseModel):
     improved_query: Optional[str] = None
     retrieval_query: Optional[str] = None
 
-    question_type: QuestionType = QuestionType.FACT
+    question_type: Optional[QuestionType] = None
 
     retrieved_schema: Optional[str] = None
     retrieved_chunks: Optional[list[str]] = None

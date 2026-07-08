@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 from bunnet import Document as BunnetDocument
 from pydantic import Field
 from pymongo import IndexModel, ASCENDING, UpdateOne
