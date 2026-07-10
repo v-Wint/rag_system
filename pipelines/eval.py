@@ -3,7 +3,8 @@ from zenml import pipeline
 
 from rag_system.domain import RAGConfig
 
-from steps.eval import load_questions_step, run_inference_step
+from steps.eval import load_questions_step, run_inference_step, eval_step
+
 
 @pipeline
 def evaluation_pipeline(
@@ -14,11 +15,13 @@ def evaluation_pipeline(
     _, prediction_finished = run_inference_step(
         dataset_name, config, questions
     )
+    eval_step(dataset_name, config, prediction_finished)
 
 if __name__ == '__main__':
     config = RAGConfig(
         collection_name="chunks__remnote_v1__hierarchical_v1__intfloat_multilingual_e5_base__510__2048",
-        preprocess_model="meta-llama/llama-4-scout-17b-16e-instruct"
+        preprocess_model="meta-llama/llama-4-scout-17b-16e-instruct",
+        reranking_size_schema=1
     )
     dataset_path = "questions/golden.json"
     evaluation_pipeline(dataset_path, config)
