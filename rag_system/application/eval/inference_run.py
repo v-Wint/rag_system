@@ -12,7 +12,10 @@ def run_inference(dataset_name: str, config: RAGConfig, question: Question) -> O
 
     result = graph.invoke(RAGState(query=question.user_input))
     
-    retrieved_chunks = list(result.get('retrieved_schema') or []) + list(result.get('retrieved_chunks') or [])
+    retrieved_chunks = (
+        ([result['retrieved_schema']] if result.get('retrieved_schema') else [])
+        + list(result.get('retrieved_chunks') or [])
+    )
     
     prediction = EvalPrediction.build(
         dataset_name=dataset_name,
