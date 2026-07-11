@@ -1,13 +1,17 @@
 from typing import Annotated
 
 from zenml import step, log_metadata
+from zenml.client import Client
 from loguru import logger
+import mlflow
 
 from rag_system.domain import EvalPrediction, Question, RAGConfig, RAGState
 from rag_system.infrastructure import mongo_init
 from rag_system.application.eval import run_inference
 
-@step(enable_cache=False)
+experiment_tracker = Client().active_stack.experiment_tracker
+
+@step(enable_cache=False, experiment_tracker=experiment_tracker.name) # type: ignore
 def run_inference_step(
     dataset_name: str, 
     config: RAGConfig, 
@@ -16,6 +20,7 @@ def run_inference_step(
     Annotated[list[EvalPrediction], "run_predictions"],
     Annotated[bool, "was_completed"]
 ]:
+    mlflow.langchain.autolog()  # type: ignore
     mongo_init()
     predictions = []
     for question in questions:
