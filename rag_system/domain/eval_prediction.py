@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, model_validator
 from pymongo import IndexModel
 from bunnet import Document
@@ -23,6 +24,7 @@ class EvalPrediction(Document):
 
     answer: str
     retrieved_chunks: list[str]
+    classified_question_type: Optional[str] = None
 
     @model_validator(mode="after")
     def compute_config_hash(self):
@@ -37,7 +39,8 @@ class EvalPrediction(Document):
         config: RAGConfig,
         question: Question,
         answer: str,
-        retrieved_chunks: list[str]
+        retrieved_chunks: list[str],
+        classified_question_type: str
     ) -> "EvalPrediction":
         return cls(
             dataset_name=dataset_name,
@@ -47,7 +50,8 @@ class EvalPrediction(Document):
             user_input=question.user_input,
             reference=question.reference,
             answer=answer,
-            retrieved_chunks=retrieved_chunks
+            retrieved_chunks=retrieved_chunks,
+            classified_question_type=classified_question_type
         )
 
     def upsert(self) -> None:

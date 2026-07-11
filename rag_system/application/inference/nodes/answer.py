@@ -21,8 +21,9 @@ def _make_answer_node(
     chain = template | llm | StrOutputParser()
 
     def answer_node(state: RAGState) -> dict:
-        answer = chain.invoke(input_mapper(state))
-        return {"answer": answer}
+        node_input = input_mapper(state)
+        answer = chain.invoke(node_input)
+        return {"answer": answer, "schema_used_in_prompt": bool(node_input.get('schema'))}
 
     return answer_node
 

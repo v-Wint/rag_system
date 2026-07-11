@@ -19,5 +19,6 @@ class RAGState(BaseModel):
 
     classification_reasoning: Optional[str] = None
     retrieval_debug: Optional[dict] = None
+    schema_used_in_prompt: Optional[bool] = None
 
     answer: Optional[str] = None
