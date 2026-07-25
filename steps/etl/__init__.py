@@ -1,2 +1,4 @@
 from .crawl_document_paths import crawl_document_paths_step
-from .sync_warehouse import sync_warehouse_step
+from .reconcile_against_warehouse import reconcile_against_warehouse_step
+from .upsert_documents import upsert_documents_step
+from .delete_docs_by_path import delete_docs_by_path_step
