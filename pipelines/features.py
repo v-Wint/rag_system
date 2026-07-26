@@ -22,6 +22,7 @@ class FeaturePipelineConfig(BaseModel):
     def resolve(self):
         embedder = Embedder.from_pretrained(self.embedding_model)
         if embedder.max_tokens:
+            # if the embedder is quite good there should be a guardrail against very big chunks
             upper_limit_tokens = min(embedder.max_tokens, settings.MAX_CHUNK_SIZE_TOKENS)
         else:
             upper_limit_tokens = settings.MAX_CHUNK_SIZE_TOKENS
@@ -56,12 +57,10 @@ class FeaturePipelineConfig(BaseModel):
 
 @pipeline
 def feature_pipeline(
-    documents: list[Document] | None = None,
-    deleted_rel_paths: list[str] | None = None,
     config: FeaturePipelineConfig = FeaturePipelineConfig()
 ):
     documents, to_delete_rel = get_changed_step(
-        documents, deleted_rel_paths, config.embedding_model, config.get_collection_name()
+        config.embedding_model, config.get_collection_name()
     )
 
     chunks, schemas = chunk_documents_step(
