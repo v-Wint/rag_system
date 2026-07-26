@@ -5,15 +5,14 @@ from pydantic import BaseModel, model_validator
 from rag_system.settings import settings
 from rag_system.domain import Document
 from rag_system.infrastructure import Embedder
-from rag_system.application.features import CleaningMethod, ChunkingMethod
+from rag_system.application.features import ChunkingMethod
 
 from steps.features import (
-    get_changed_step, clean_documents_step, 
+    get_changed_step, 
     chunk_documents_step, embed_load_chunks_step, prune_save_schema_step)
 
 
 class FeaturePipelineConfig(BaseModel):
-    cleaning_method: CleaningMethod = CleaningMethod.REMNOTE_V1
     chunking_method: ChunkingMethod = ChunkingMethod.HIERARCHICAL_V1
     embedding_model: str = settings.TEXT_EMBEDDING_MODEL_ID
     max_tokens: Optional[int] = None
@@ -49,7 +48,7 @@ class FeaturePipelineConfig(BaseModel):
         return self.embedding_model.replace("/", "_").replace("-", "_")
 
     def get_collection_name(self, prefix: str = "chunks") -> str:
-        parts = [prefix, self.cleaning_method, self.chunking_method, self.safe_model_slug, str(self.max_tokens)]
+        parts = [prefix, self.chunking_method, self.safe_model_slug, str(self.max_tokens)]
         if self.max_schema_tokens:
             parts.append(str(self.max_schema_tokens))
         return "__".join(parts)
@@ -61,16 +60,12 @@ def feature_pipeline(
     deleted_rel_paths: list[str] | None = None,
     config: FeaturePipelineConfig = FeaturePipelineConfig()
 ):
-    raw_documents, to_delete_rel = get_changed_step(
+    documents, to_delete_rel = get_changed_step(
         documents, deleted_rel_paths, config.embedding_model, config.get_collection_name()
     )
 
-    cleaned_documents = clean_documents_step(
-        raw_documents, config.cleaning_method
-    )
-
     chunks, schemas = chunk_documents_step(
-        cleaned_documents, config.chunking_method, config.embedding_model, config.max_tokens
+        documents, config.chunking_method, config.embedding_model, config.max_tokens
     )
 
     prune_save_schema_step(

@@ -12,6 +12,8 @@ def upsert_documents_step(
     Annotated[int, "modified_num"],
     Annotated[int, "created_num"],
 ]:
+    if not documents:
+        return 0, 0
     result = Document.bulk_upsert(documents)
     modified = created = 0
     if result:

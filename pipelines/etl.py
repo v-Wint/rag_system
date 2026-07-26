@@ -6,7 +6,7 @@ from rag_system.domain import Document
 
 from steps.etl import (
     crawl_document_paths_step, reconcile_against_warehouse_step,
-    upsert_documents_step,
+    clean_documents_step, upsert_documents_step,
     delete_docs_by_path_step
 )
 
@@ -18,7 +18,9 @@ def etl_pipeline(data_dir: str | Path) -> tuple[
     abosulte_file_paths = crawl_document_paths_step(data_dir)
     docs_to_upsert, paths_to_delete = reconcile_against_warehouse_step(data_dir, abosulte_file_paths)
 
+    docs_to_upsert = clean_documents_step(docs_to_upsert)
     upsert_documents_step(docs_to_upsert)
+
     delete_docs_by_path_step(paths_to_delete)
 
     return docs_to_upsert, paths_to_delete

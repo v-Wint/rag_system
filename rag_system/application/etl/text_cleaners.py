@@ -27,7 +27,7 @@ def fix_inline_code_fences(text: str) -> str:
     
     return "\n".join(result)
 
-def _clean_remnote_v1(text: str) -> str:
+def clean_text(text: str) -> str:
     text = re.sub(r'!\[.*?\]\(.*?\)', '<img>', text)
     # 1. Remove all property/formatting command tokens
     text = re.sub(r'[\s;]*-?\s*\[[^\]]*\]\([^)]*\);-\S+', '', text)

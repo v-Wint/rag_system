@@ -9,6 +9,8 @@ from rag_system.domain import Document
 def delete_docs_by_path_step(
     paths_to_delete: list[str]
 ) -> Annotated[int, "deleted_count"]:
+    if not paths_to_delete:
+        return 0
     logger.info(f"Deleting {len(paths_to_delete)} paths")
     
     result = Document.bulk_delete_by_paths(paths_to_delete)
