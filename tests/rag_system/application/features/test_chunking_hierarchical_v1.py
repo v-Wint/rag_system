@@ -1,6 +1,6 @@
 import pytest
-from rag_system.application.features.chunking.hierarchical_v1 import (
-    _hierarchical_v1,
+from rag_system.application.features.chunking.hierarchical.v1 import hierarchical_v1
+from rag_system.application.features.chunking.hierarchical.base import (
     _split_chunks,
     clean_line,
     shorten_line,
@@ -10,7 +10,7 @@ from rag_system.application.features.chunking.hierarchical_v1 import (
     split_by_newlines,
     split,
 )
-from rag_system.domain import Chunk, SchemaNode
+from rag_system.domain import BaseChunk, SchemaNode
 
 
 class TestCleanLine:
@@ -252,7 +252,7 @@ class TestSplitChunks:
         text = "# Heading One\nSome body content here\nmore text\nand more"
         chunks = _split_chunks(text, ["doc"], [], len, 10_000, None)
         assert isinstance(chunks, list)
-        assert all(isinstance(c, Chunk) for c in chunks)
+        assert all(isinstance(c, BaseChunk) for c in chunks)
 
     def test_small_sections_get_accumulated_into_single_chunk(self):
         # short entries (<=3 lines / no body) should be merged via accumulator
@@ -268,14 +268,14 @@ class TestSplitChunks:
         chunks = _split_chunks(text, ["doc"], [], len, 50, None)
         assert len(chunks) >= 1
         for c in chunks:
-            assert isinstance(c, Chunk)
+            assert isinstance(c, BaseChunk)
 
     def test_accumulator_flushed_at_end(self):
         text = "- a\n- b"
         chunks = _split_chunks(text, ["doc"], [], len, 10_000, None)
         assert len(chunks) == 1
-        assert "a" in chunks[0].content
-        assert "b" in chunks[0].content
+        assert "a" in chunks[0].text
+        assert "b" in chunks[0].text
 
     def test_populates_schema_node_children_for_real_sections(self):
         text = "# Heading One\nbody with enough lines\nline two\nline three\nline four\n# Heading 2"
@@ -298,44 +298,44 @@ class TestSplitChunks:
 class TestHierarchicalV1:
     def test_returns_chunks_and_root_schema_node(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
-        chunks, root = _hierarchical_v1(text, "docs/notes.md")
+        chunks, root = hierarchical_v1(text, "docs/notes.md")
         assert isinstance(chunks, list)
-        assert all(isinstance(c, Chunk) for c in chunks)
+        assert all(isinstance(c, BaseChunk) for c in chunks)
         assert isinstance(root, SchemaNode)
 
     def test_string_doc_path_is_split_on_slash(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
-        chunks, root = _hierarchical_v1(text, "docs/notes.md")
+        chunks, root = hierarchical_v1(text, "docs/notes.md")
         assert chunks[0].doc_path == ["docs", "notes.md"]
 
     def test_list_doc_path_used_as_is(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
-        chunks, root = _hierarchical_v1(text, ["docs", "notes.md"])
+        chunks, root = hierarchical_v1(text, ["docs", "notes.md"])
         assert chunks[0].doc_path == ["docs", "notes.md"]
 
     def test_schema_tree_mirrors_doc_path(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
-        _, root = _hierarchical_v1(text, "a/b/c")
+        _, root = hierarchical_v1(text, "a/b/c")
         assert root.title == "a"
         assert root.children[0].title == "b"
         assert root.children[0].children[0].title == "c"
 
     def test_empty_doc_path_uses_leaf_as_root(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
-        _, root = _hierarchical_v1(text, [])
+        _, root = hierarchical_v1(text, [])
         # with no doc_path, the leaf node produced by _split_chunks becomes root
         assert isinstance(root, SchemaNode)
 
     def test_respects_max_tokens_by_recursing(self):
         big_body = "\n".join(f"detail line {i} padding padding" for i in range(80))
         text = f"# Big\n{big_body}"
-        chunks, _ = _hierarchical_v1(text, "doc", get_token_count=len, max_tokens=100)
+        chunks, _ = hierarchical_v1(text, "doc", get_token_count=len, max_tokens=100)
         assert len(chunks) > 1
         for c in chunks:
             assert len(c.embedding_text) < 100 or True  # recursed leaves should mostly fit
 
     def test_embedding_text_contains_location_breadcrumb(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
-        chunks, _ = _hierarchical_v1(text, "doc")
+        chunks, _ = hierarchical_v1(text, "doc")
         assert chunks[0].embedding_text.startswith("Document Location: ")
         assert "Section" in chunks[0].embedding_text

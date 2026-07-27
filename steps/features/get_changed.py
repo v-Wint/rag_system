@@ -10,7 +10,6 @@ from rag_system.application.features import reconcile
 
 @step(enable_cache=False)
 def get_changed_step(
-    embedding_model: str,
     collection_name: str
 ) -> tuple[
     Annotated[list[Document], "raw_documents"],
@@ -22,7 +21,12 @@ def get_changed_step(
     documents = Document.find_all().to_list()
     logger.info(f"Loaded {len(documents)} documents from warehouse")
 
-    store_hashes = VectorStore.from_collection_name(collection_name, Embedder.from_pretrained(embedding_model)).get_all_path_hash_pairs()
+    if VectorStore.collection_exists(collection_name):
+        store_hashes = VectorStore.get_all_path_hash_pairs(collection_name)
+    else:
+        logger.info("No hashes in the feature store")
+        return documents, []
+
     logger.info(f"Loaded {len(store_hashes)} documents from feature store")
 
     new_docs, changed_docs, unchanged_docs, to_delete = reconcile(store_hashes, documents)

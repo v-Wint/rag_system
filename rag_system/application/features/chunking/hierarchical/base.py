@@ -1,22 +1,11 @@
 from typing import Callable, Optional
-from pathlib import PurePosixPath
+
 import re
 
-from rag_system.domain import Chunk, SchemaNode
+from rag_system.domain import SchemaNode, HierarchicalChunk
 
 
-def _hierarchical_v1(
-        text: str, 
-        doc_path: str | list, 
-        get_token_count: Callable[[str], int] = len, 
-        max_tokens=1_00_000):
-
-    if isinstance(doc_path, str):
-        doc_path = doc_path.split('/')
-
-    leaf_node = SchemaNode()
-    data_chunks = _split_chunks(text, doc_path, [], get_token_count, max_tokens, leaf_node)
-    
+def add_doc_path_to_schema(doc_path: list[str], schema: SchemaNode):
     if doc_path:
         root = SchemaNode(title=doc_path[0])
         current = root
@@ -24,11 +13,10 @@ def _hierarchical_v1(
             new_node = SchemaNode(title=level)
             current.children.append(new_node)
             current = new_node
-        current.children.append(leaf_node)
+        current.children.append(schema)
     else:
-        root = leaf_node
-    
-    return data_chunks, root
+        root = schema
+    return root
 
 
 def _split_chunks(
@@ -49,9 +37,9 @@ def _split_chunks(
         title, body = title_body_split(c)
 
         if not body or len(c.strip().splitlines()) <= 3:
-            candidate = Chunk.from_params(path[-1] if path else '', doc_path, path[:-1], accumulator + '\n' + c.strip())
+            candidate = HierarchicalChunk.from_params(path[-1] if path else '', doc_path, path[:-1], accumulator + '\n' + c.strip())
             if get_token_count(candidate.embedding_text) >= max_tokens:
-                result.append(Chunk.from_params(
+                result.append(HierarchicalChunk.from_params(
                         path[-1] if path else '', 
                         doc_path, 
                         path[:-1], 
@@ -59,10 +47,10 @@ def _split_chunks(
                 )
                 accumulator = c.strip()
             else:
-                accumulator = candidate.content
+                accumulator = candidate.text
             continue
 
-        chunk = Chunk.from_params(title, doc_path, path, c)
+        chunk = HierarchicalChunk.from_params(title, doc_path, path, c)
 
         new_node = None
         if node: 
@@ -76,7 +64,7 @@ def _split_chunks(
             result += new_chunks
 
     if accumulator:
-        result.append(Chunk.from_params(path[-1] if path else '', doc_path, path[:-1], accumulator))
+        result.append(HierarchicalChunk.from_params(path[-1] if path else '', doc_path, path[:-1], accumulator))
     return result
 
 

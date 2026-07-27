@@ -10,7 +10,7 @@ def make_retrieve_node(
     reranking_size: int,
 ):
     embedder = Embedder.from_pretrained(embedding_model)
-    store = VectorStore.from_collection_name(collection_name, embedder, False)
+    store = VectorStore.from_collection_name(collection_name, embedder)
     base_retriever = store.as_retriever(search_kwargs={"k": vector_retrieval_size})
     cross_encoder = CrossEncoder.from_pretrained(cross_encoder_model)
 

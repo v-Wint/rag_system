@@ -1,4 +1,4 @@
 from .get_changed import get_changed_step
-from .chunk_documents import chunk_documents_step
+from .chunk_hierarchical import chunk_hierarchical_step
 from .embed_load_chunks import embed_load_chunks_step
 from .prune_save_schema import prune_save_schema_step
