@@ -22,43 +22,44 @@ def get_qdrant_client() -> QdrantClient:
 class VectorStore(QdrantVectorStore):
     _instances: dict[str, "VectorStore"] = {}
 
-    def __init__(self, collection_name: str, embedding, create_if_missing: bool = True):
+    def __init__(self, collection_name: str, embedding):
         client = get_qdrant_client()
 
         if not client.collection_exists(collection_name=collection_name):
-            if create_if_missing:
-                client.create_collection(
-                    collection_name=collection_name,
-                    vectors_config=VectorParams(
-                        size=embedding.vector_size,
-                        distance=Distance.COSINE,
-                    ),
-                )
-            else:
-                raise ValueError(
-                    f"Collection '{collection_name}' does not exist. "
-                    f"Run the feature pipeline before querying."
-                )
+            client.create_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(
+                    size=embedding.vector_size,
+                    distance=Distance.COSINE,
+                ),
+            )
 
         super().__init__(client=client, collection_name=collection_name, embedding=embedding)
 
     @classmethod
+    def collection_exists(cls, collection_name: str) -> bool:
+        client = get_qdrant_client()
+        return client.collection_exists(collection_name=collection_name)
+
+    @classmethod
     def from_collection_name(
-        cls, collection_name: str, embedding, create_if_missing: bool = True
+        cls, collection_name: str, embedding
     ) -> "VectorStore":
         if collection_name not in cls._instances:
-            cls._instances[collection_name] = cls(collection_name, embedding, create_if_missing)
+            cls._instances[collection_name] = cls(collection_name, embedding)
         return cls._instances[collection_name]
 
-    def get_all_path_hash_pairs(self) -> dict[str, str]:
-        if not self.client.collection_exists(collection_name=self.collection_name):
+    @staticmethod
+    def get_all_path_hash_pairs(collection_name) -> dict[str, str]:
+        client = get_qdrant_client()
+        if not client.collection_exists(collection_name=collection_name):
             return {}
         
         path_hash_pairs = {}
         offset = None
         while True:
-            points, offset = self.client.scroll(
-                collection_name=self.collection_name,
+            points, offset = client.scroll(
+                collection_name=collection_name,
                 with_payload=True,
                 limit=1000,
                 offset=offset,
@@ -76,26 +77,8 @@ class VectorStore(QdrantVectorStore):
                 break
         return path_hash_pairs
 
-    def chunk_to_doc(self, cd: ChunkDocument):
-        doc_hash = cd.doc_hash
-        chunk = cd.chunk
-        chunk_id = str(uuid.UUID(get_hash(chunk.embedding_text + chunk.title + doc_hash)))
-
-        return Document(
-            page_content=chunk.embedding_text,
-            id=chunk_id,
-            metadata={
-                "content": chunk.content,
-                "title": chunk.title,
-                "doc_hash": doc_hash,
-                "doc_path": "/".join(chunk.doc_path),
-                "abs_path": "/".join(chunk.abs_path),
-                "rel_path": "/".join(chunk.rel_path),
-            }
-        )
-
     def add_chunks(self, cds: list[ChunkDocument], **kwargs):
-        documents = [self.chunk_to_doc(cd) for cd in cds]
+        documents = [cd.to_document() for cd in cds]
         return self.add_documents(documents, **kwargs)
 
     def delete_by_relative_paths(self, relative_paths: list[str]) -> None:
