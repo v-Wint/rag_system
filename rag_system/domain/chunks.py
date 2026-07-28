@@ -22,6 +22,13 @@ class BaseChunk(BaseModel, ABC):
             }
         )
 
+class RecursiveChunk(BaseChunk):
+    chunk_type: Literal["recursive"] = "recursive"
+
+    def to_document(self) -> Document:
+        return super().to_document()
+
+
 class HierarchicalChunk(BaseChunk):
     chunk_type: Literal["hierarchical"] = "hierarchical"
 
@@ -55,7 +62,7 @@ class HierarchicalChunk(BaseChunk):
         return doc
 
 AnyChunk = Annotated[
-    Union[HierarchicalChunk],
+    Union[RecursiveChunk, HierarchicalChunk],
     Field(discriminator="chunk_type")
 ]
 

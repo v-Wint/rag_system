@@ -1,4 +1,5 @@
 from .get_changed import get_changed_step
+from .chunk_recursive import chunk_recursive_step
 from .chunk_hierarchical import chunk_hierarchical_step
 from .embed_load_chunks import embed_load_chunks_step
 from .sync_document_trees import sync_document_trees_step
