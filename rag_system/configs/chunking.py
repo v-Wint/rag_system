@@ -50,7 +50,7 @@ class HierarchicalV1Config(BaseModel):
 
     @property
     def slug(self) -> str:
-        parts = ['chunks', self.method, self.safe_model_slug, str(self.max_chunk_size)]
+        parts = ['chunks', self.method, self.version, self.safe_model_slug, str(self.max_chunk_size)]
         return "__".join(parts)
 
 
