@@ -48,10 +48,9 @@ class HierarchicalV1Config(BaseModel):
         assert self.embedding_model is not None
         return self.embedding_model.replace("/", "_").replace("-", "_")
 
-    def get_collection_name(self, prefix: str = "chunks") -> str:
-        parts = [prefix, self.method, self.safe_model_slug, str(self.max_chunk_size)]
-        if self.max_schema_size:
-            parts.append(str(self.max_schema_size))
+    @property
+    def slug(self) -> str:
+        parts = ['chunks', self.method, self.safe_model_slug, str(self.max_chunk_size)]
         return "__".join(parts)
 
 

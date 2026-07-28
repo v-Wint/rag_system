@@ -2,15 +2,15 @@ from typing import Callable, Optional
 
 import re
 
-from rag_system.domain import SchemaNode, HierarchicalChunk
+from rag_system.domain import DocumentNode, HierarchicalChunk
 
 
-def add_doc_path_to_schema(doc_path: list[str], schema: SchemaNode):
+def add_doc_path_to_schema(doc_path: list[str], schema: DocumentNode):
     if doc_path:
-        root = SchemaNode(title=doc_path[0])
+        root = DocumentNode(title=doc_path[0])
         current = root
         for level in doc_path[1:]:
-            new_node = SchemaNode(title=level)
+            new_node = DocumentNode(title=level)
             current.children.append(new_node)
             current = new_node
         current.children.append(schema)
@@ -23,9 +23,9 @@ def _split_chunks(
         text: str, 
         doc_path: list[str], 
         path: list, 
-        get_token_count: Callable[[str], int] = len, 
-        max_tokens=10_000,
-        node: Optional[SchemaNode] = None):
+        get_size: Callable[[str], int] = len, 
+        max_size=10_000,
+        node: Optional[DocumentNode] = None):
 
     accumulator = ''
     chunks = split(text)
@@ -38,7 +38,7 @@ def _split_chunks(
 
         if not body or len(c.strip().splitlines()) <= 3:
             candidate = HierarchicalChunk.from_params(path[-1] if path else '', doc_path, path[:-1], accumulator + '\n' + c.strip())
-            if get_token_count(candidate.embedding_text) >= max_tokens:
+            if get_size(candidate.embedding_text) >= max_size:
                 result.append(HierarchicalChunk.from_params(
                         path[-1] if path else '', 
                         doc_path, 
@@ -54,13 +54,13 @@ def _split_chunks(
 
         new_node = None
         if node: 
-            new_node = SchemaNode(title=title)
+            new_node = DocumentNode(title=title)
             node.children.append(new_node)
 
-        if get_token_count(chunk.embedding_text) < max_tokens:
+        if get_size(chunk.embedding_text) < max_size:
             result.append(chunk)
         else:
-            new_chunks = _split_chunks(body, chunk.doc_path, chunk.rel_path, get_token_count, max_tokens, new_node)
+            new_chunks = _split_chunks(body, chunk.doc_path, chunk.rel_path, get_size, max_size, new_node)
             result += new_chunks
 
     if accumulator:

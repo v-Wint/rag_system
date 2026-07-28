@@ -1,2 +1,2 @@
 from .reconcile import reconcile
-from .reconcile_schema import reconcile_schema
+from .prune_tree import prune_tree

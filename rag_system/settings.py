@@ -25,7 +25,8 @@ class Settings(BaseSettings):
 
     MONGO_DOCUMENT_MODELS: list[str] = [
         "rag_system.domain.documents.Document",
-        "rag_system.domain.schema.SchemaText",
+        "rag_system.domain.schema.DocumentTree",
+        "rag_system.domain.schema.SchemaString",
         "rag_system.domain.eval_prediction.EvalPrediction",
     ]
 

@@ -10,7 +10,7 @@ from rag_system.application.features.chunking.hierarchical.base import (
     split_by_newlines,
     split,
 )
-from rag_system.domain import BaseChunk, SchemaNode
+from rag_system.domain import BaseChunk, DocumentNode
 
 
 class TestCleanLine:
@@ -279,7 +279,7 @@ class TestSplitChunks:
 
     def test_populates_schema_node_children_for_real_sections(self):
         text = "# Heading One\nbody with enough lines\nline two\nline three\nline four\n# Heading 2"
-        root_node = SchemaNode()
+        root_node = DocumentNode()
         _split_chunks(text, ["doc"], [], len, len(text) -5, root_node)
         # a real (multi-line, titled) section should register a child node
         assert len(root_node.children) >= 1
@@ -301,7 +301,7 @@ class TestHierarchicalV1:
         chunks, root = hierarchical_v1(text, "docs/notes.md")
         assert isinstance(chunks, list)
         assert all(isinstance(c, BaseChunk) for c in chunks)
-        assert isinstance(root, SchemaNode)
+        assert isinstance(root, DocumentNode)
 
     def test_string_doc_path_is_split_on_slash(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
@@ -324,12 +324,12 @@ class TestHierarchicalV1:
         text = "# Section\nbody line one\nline two\nline three\nline four"
         _, root = hierarchical_v1(text, [])
         # with no doc_path, the leaf node produced by _split_chunks becomes root
-        assert isinstance(root, SchemaNode)
+        assert isinstance(root, DocumentNode)
 
     def test_respects_max_tokens_by_recursing(self):
         big_body = "\n".join(f"detail line {i} padding padding" for i in range(80))
         text = f"# Big\n{big_body}"
-        chunks, _ = hierarchical_v1(text, "doc", get_token_count=len, max_tokens=100)
+        chunks, _ = hierarchical_v1(text, "doc", get_size=len, max_size=100)
         assert len(chunks) > 1
         for c in chunks:
             assert len(c.embedding_text) < 100 or True  # recursed leaves should mostly fit

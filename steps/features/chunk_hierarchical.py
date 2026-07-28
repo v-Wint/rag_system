@@ -2,7 +2,7 @@ from loguru import logger
 from tqdm import tqdm
 from typing_extensions import Annotated
 from zenml import step, log_metadata
-from rag_system.domain import Document, SchemaNode, ChunkDocument
+from rag_system.domain import Document, DocumentTree, ChunkDocument
 from rag_system.application.features.chunking.hierarchical import chunk_document_hierarchical
 from rag_system.infrastructure import Embedder
 from rag_system.configs.chunking import HierarchicalConfig
@@ -14,7 +14,7 @@ def chunk_hierarchical_step(
     config: HierarchicalConfig
 ) -> tuple[
     Annotated[list[ChunkDocument], "chunks"],
-    Annotated[list[SchemaNode], "document_schemas"]
+    Annotated[list[DocumentTree], "document_trees"]
 ]:
     if not documents:
         return [], []
@@ -26,16 +26,15 @@ def chunk_hierarchical_step(
     )
 
     chunk_list: list[ChunkDocument] = []
-    schema_list: list[SchemaNode] = []
+    tree_list: list[DocumentTree] = []
 
     for document in tqdm(documents, desc="Chunking documents"):
-        chunks, schema = chunk_document_hierarchical(
+        chunks, tree = chunk_document_hierarchical(
             document, config, lambda s: embedder.get_token_count(s),
         )
         cds = [ChunkDocument(chunk=chunk, doc_hash=document.hash) for chunk in chunks]
         chunk_list += cds
-        if schema:
-            schema_list.append(schema)
+        tree_list.append(DocumentTree(root=tree, doc_path=document.relative_path, config_slug=config.slug))
 
     logger.info(f"Produced {len(chunk_list)} chunks from {len(documents)} documents")
 
@@ -50,4 +49,4 @@ def chunk_hierarchical_step(
         artifact_name="chunks",
         infer_artifact=True
     )
-    return chunk_list, schema_list
+    return chunk_list, tree_list

@@ -1,9 +1,8 @@
-from typing import Optional
 from loguru import logger
 from typing_extensions import Annotated
 from zenml import step, log_metadata
 
-from rag_system.infrastructure import mongo_init, VectorStore, Embedder
+from rag_system.infrastructure import mongo_init, VectorStore
 from rag_system.domain import Document
 from rag_system.application.features import reconcile
 
@@ -13,7 +12,7 @@ def get_changed_step(
     collection_name: str
 ) -> tuple[
     Annotated[list[Document], "raw_documents"],
-    Annotated[Optional[list[str]], "deleted_paths_relative"]
+    Annotated[list[str], "deleted_paths_relative"]
 ]:
     mongo_init()
 

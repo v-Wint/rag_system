@@ -61,7 +61,7 @@ class Document(BunnetDocument):
         
 
     @classmethod
-    def bulk_delete_by_paths(cls, absolute_paths: list[str]) -> DeleteResult | None:
+    def delete_by_paths(cls, absolute_paths: list[str]) -> DeleteResult | None:
         if not absolute_paths:
             return
 

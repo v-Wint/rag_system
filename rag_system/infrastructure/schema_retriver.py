@@ -2,24 +2,29 @@ from typing import Optional
 
 from langchain_core.runnables import Runnable
 
-from rag_system.domain import SchemaText
+from rag_system.domain import SchemaString
 from rag_system.infrastructure import mongo_init
 
 
 class SchemaRetriever(Runnable):
-    _cache: dict[str, Optional[str]] = {}
+    _cache: dict[tuple[str, int], Optional[str]] = {}
 
-    def __init__(self, collection_name: str):
-        self.collection_name = collection_name
+    def __init__(self, config_slug: str, max_size: int):
+        self.config_slug = config_slug
+        self.max_size = max_size
 
     def invoke(self, input = None, config = None, **kwargs) -> Optional[str]:
-        if self.collection_name not in self._cache:
-            self._cache[self.collection_name] = self._fetch_schema()
-        return self._cache[self.collection_name]
+        key = (self.config_slug, self.max_size)
+        if key not in self._cache:
+            self._cache[key] = self._fetch_schema()
+        return self._cache[key]
 
     def _fetch_schema(self) -> Optional[str]:
         mongo_init()
-        result = SchemaText.find_one(SchemaText.collection == self.collection_name).run()
+        result = SchemaString.find_one(
+            (SchemaString.config_slug == self.config_slug) & 
+            (SchemaString.max_size == self.max_size)
+        ).run()
         if not result:
             return None
         return result.text

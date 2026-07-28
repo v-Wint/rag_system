@@ -13,7 +13,7 @@ def delete_docs_by_path_step(
         return 0
     logger.info(f"Deleting {len(paths_to_delete)} paths")
     
-    result = Document.bulk_delete_by_paths(paths_to_delete)
+    result = Document.delete_by_paths(paths_to_delete)
     deleted = result.deleted_count if result else 0
 
     log_metadata({
