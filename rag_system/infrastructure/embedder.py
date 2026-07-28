@@ -45,7 +45,7 @@ class Embedder(HuggingFaceEmbeddings):
         return super().embed_query(text)
 
     def get_token_count(self, text: str) -> int:
-        return len(self._client.tokenizer.encode(text))
+        return len(self._client.tokenizer(text)["input_ids"])
 
     @property
     def vector_size(self) -> int | None:
