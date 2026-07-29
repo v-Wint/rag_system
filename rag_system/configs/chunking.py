@@ -1,18 +1,17 @@
-from typing import Optional, Literal, Union, Annotated
+from typing import Optional, Literal, Union, Annotated, TypeVar, Generic
 from pydantic import BaseModel, model_validator, Field
-from enum import Enum
 
 from rag_system.settings import settings
+from .enums import ChunkingMethod
 
 
-class ChunkingMethod(str, Enum):
-    RECURSIVE = "recursive"
-    HIERARCHICAL = "hierarchical"
+MethodT = TypeVar("MethodT", bound=ChunkingMethod)
+VersionT = TypeVar("VersionT", bound=str)
 
 
-class BaseChunkingConfig(BaseModel):
-    method: ChunkingMethod
-    version: str
+class BaseChunkingConfig(BaseModel, Generic[MethodT, VersionT]):
+    method: MethodT
+    version: VersionT
     embedding_model: str = settings.TEXT_EMBEDDING_MODEL_ID
     max_chunk_size: Optional[int] = None
 
@@ -56,9 +55,9 @@ class BaseChunkingConfig(BaseModel):
         return "__".join(self.slug_parts)
 
 
-class RecursiveV1Config(BaseChunkingConfig):
-    method: Literal[ChunkingMethod.RECURSIVE] = ChunkingMethod.RECURSIVE # type: ignore
-    version: Literal["1.0"] = "1.0" # type: ignore
+class RecursiveV1Config(BaseChunkingConfig[Literal[ChunkingMethod.RECURSIVE], Literal["1.0"]]):
+    method: Literal[ChunkingMethod.RECURSIVE] = ChunkingMethod.RECURSIVE
+    version: Literal["1.0"] = "1.0"
     overlap_size: Optional[int] = None
 
     @model_validator(mode="after")
@@ -79,9 +78,9 @@ class RecursiveV1Config(BaseChunkingConfig):
         return existing
 
 
-class HierarchicalV1Config(BaseChunkingConfig):
-    method: Literal[ChunkingMethod.HIERARCHICAL] = ChunkingMethod.HIERARCHICAL # type: ignore
-    version: Literal["1.0"] = "1.0" # type: ignore
+class HierarchicalV1Config(BaseChunkingConfig[Literal[ChunkingMethod.HIERARCHICAL], Literal["1.0"]]):
+    method: Literal[ChunkingMethod.HIERARCHICAL] = ChunkingMethod.HIERARCHICAL
+    version: Literal["1.0"] = "1.0"
     max_schema_size: Optional[int] = None
 
     @model_validator(mode="after")
@@ -104,6 +103,6 @@ HierarchicalConfig = Annotated[
 ]
 
 ChunkingConfig = Annotated[
-    Union[HierarchicalConfig],
+    Union[RecursiveConfig, HierarchicalConfig],
     Field(discriminator="method")
 ]
