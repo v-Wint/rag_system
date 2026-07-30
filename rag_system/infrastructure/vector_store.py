@@ -1,4 +1,3 @@
-import uuid
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import Distance, VectorParams
 from langchain_qdrant import QdrantVectorStore
@@ -6,7 +5,9 @@ from langchain_core.documents import Document
 from rag_system.settings import settings
 from rag_system.domain import ChunkDocument
 from rag_system.utils import get_hash
+import logging
 
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 _qdrant_client: QdrantClient | None = None
 

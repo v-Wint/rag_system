@@ -1,6 +1,6 @@
 from typing import ClassVar
 from langchain_huggingface import HuggingFaceEmbeddings
-
+from huggingface_hub import scan_cache_dir
 
 from rag_system import settings
 
@@ -10,6 +10,14 @@ _PREFIXED_MODELS = {
     "intfloat/e5-base-v2",
     "intfloat/e5-large-v2",
 }
+
+def _is_cached(model_name: str) -> bool:
+    try:
+        cache_info = scan_cache_dir()
+        return any(repo.repo_id == model_name for repo in cache_info.repos)
+    except Exception:
+        return False
+
 
 class Embedder(HuggingFaceEmbeddings):
     _instances: ClassVar[dict[str, "Embedder"]] = {}
@@ -21,6 +29,7 @@ class Embedder(HuggingFaceEmbeddings):
             model_kwargs={
                 "token": settings.HUGGINGFACE_ACCESS_TOKEN,
                 "device": settings.TEXT_EMBEDDING_DEVICE,
+                "local_files_only": _is_cached(model_name)
             },
             encode_kwargs={"normalize_embeddings": True}
 
