@@ -23,7 +23,6 @@ def chunk_recursive_step(
     )
 
     chunk_list: list[ChunkDocument] = []
-    tree_list: list[DocumentTree] = []
 
     for document in tqdm(documents, desc="Chunking documents"):
         chunks = chunk_document_recursive(
@@ -34,7 +33,7 @@ def chunk_recursive_step(
 
     logger.info(f"Produced {len(chunk_list)} chunks from {len(documents)} documents")
 
-    metadata = config.model_dump()
+    metadata = config.model_dump(exclude_none=True)
     metadata.update({
         "num_documents": len(documents),
         "num_chunks": len(chunk_list),

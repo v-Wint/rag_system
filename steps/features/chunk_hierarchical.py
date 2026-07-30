@@ -38,7 +38,7 @@ def chunk_hierarchical_step(
 
     logger.info(f"Produced {len(chunk_list)} chunks from {len(documents)} documents")
 
-    metadata = config.model_dump()
+    metadata = config.model_dump(exclude_none=True)
     metadata.update({
         "num_documents": len(documents),
         "num_chunks": len(chunk_list),

@@ -1,5 +1,6 @@
 from typing import Optional, Literal, Union, Annotated, TypeVar, Generic
-from pydantic import BaseModel, model_validator, Field
+from abc import ABC, abstractmethod
+from pydantic import BaseModel, Field
 
 from rag_system.settings import settings
 from .enums import ChunkingMethod
@@ -9,34 +10,39 @@ MethodT = TypeVar("MethodT", bound=ChunkingMethod)
 VersionT = TypeVar("VersionT", bound=str)
 
 
-class BaseChunkingConfig(BaseModel, Generic[MethodT, VersionT]):
+class BaseChunkingConfig(BaseModel, ABC, Generic[MethodT, VersionT]):
     method: MethodT
     version: VersionT
     embedding_model: str = settings.TEXT_EMBEDDING_MODEL_ID
-    max_chunk_size: Optional[int] = None
+    raw_max_chunk_size: Optional[int] = None
 
-    def _resolve_max_chunk_size(self) -> int:
+    resolved_max_chunk_size: Optional[int] = None
+
+    @property
+    def max_chunk_size(self) -> int:
+        if self.resolved_max_chunk_size is not None:
+            return self.resolved_max_chunk_size
+
         from rag_system.infrastructure import Embedder
-
         embedder = Embedder.from_pretrained(self.embedding_model)
+        max_tokens = embedder.max_tokens or settings.MAX_CHUNK_SIZE_TOKENS
+        upper_limit = min(max_tokens, settings.MAX_CHUNK_SIZE_TOKENS)
 
-        upper_limit = (
-            min(embedder.max_tokens, settings.MAX_CHUNK_SIZE_TOKENS)
-            if embedder.max_tokens
-            else settings.MAX_CHUNK_SIZE_TOKENS
-        )
+        if self.raw_max_chunk_size is None:
+            self.resolved_max_chunk_size = upper_limit
+        else:
+            if self.raw_max_chunk_size > upper_limit:
+                raise ValueError(
+                    f"requested raw_max_chunk_size={self.raw_max_chunk_size} exceeds the upper limit "
+                    f"of {upper_limit} for embedding_model={self.embedding_model!r}"
+                )
+            self.resolved_max_chunk_size = self.raw_max_chunk_size
 
-        if self.max_chunk_size is None:
-            self.max_chunk_size = upper_limit
+        return self.resolved_max_chunk_size
 
-        if self.max_chunk_size > upper_limit:
-            raise ValueError(...)
-
-        return self.max_chunk_size
-
-    @model_validator(mode="after")
+    @abstractmethod
     def resolve(self):
-        self._resolve_max_chunk_size()
+        _ = self.max_chunk_size
         return self
 
     @property
@@ -58,37 +64,55 @@ class BaseChunkingConfig(BaseModel, Generic[MethodT, VersionT]):
 class RecursiveV1Config(BaseChunkingConfig[Literal[ChunkingMethod.RECURSIVE], Literal["1.0"]]):
     method: Literal[ChunkingMethod.RECURSIVE] = ChunkingMethod.RECURSIVE
     version: Literal["1.0"] = "1.0"
-    overlap_size: Optional[int] = None
+    raw_overlap_size: Optional[int] = None
 
-    @model_validator(mode="after")
-    def resolve_overlap(self):
-        max_chunk_size = self._resolve_max_chunk_size()
+    resolved_overlap_size: Optional[int] = None
 
-        if self.overlap_size is None:
-            self.overlap_size = int(max_chunk_size * 0.1)
+    @property
+    def overlap_size(self) -> int:
+        if self.resolved_overlap_size is not None:
+            return self.resolved_overlap_size
 
+        if self.raw_overlap_size is not None:
+            self.resolved_overlap_size = self.raw_overlap_size
+        else:
+            self.resolved_overlap_size = int(self.max_chunk_size * 0.1)
+
+        return self.resolved_overlap_size
+
+    def resolve(self):
+        super().resolve()
+        _ = self.overlap_size
         return self
-
 
     @property
     def slug_parts(self) -> list[str]:
-        """Override/extend in subclasses to add extra slug components."""
-        existing = super().slug_parts
-        existing.append(str(self.overlap_size))
-        return existing
+        return super().slug_parts + [str(self.overlap_size)]
 
 
 class HierarchicalV1Config(BaseChunkingConfig[Literal[ChunkingMethod.HIERARCHICAL], Literal["1.0"]]):
     method: Literal[ChunkingMethod.HIERARCHICAL] = ChunkingMethod.HIERARCHICAL
     version: Literal["1.0"] = "1.0"
-    max_schema_size: Optional[int] = None
+    raw_max_schema_size: Optional[int] = None
 
-    @model_validator(mode="after")
-    def resolve_max_schema_size(self):
-        max_chunk_size = self._resolve_max_chunk_size()
+    resolved_max_schema_size: Optional[int] = None
 
-        if not self.max_schema_size:
-            self.max_schema_size = max_chunk_size
+    @property
+    def max_schema_size(self) -> int:
+        if self.resolved_max_schema_size is not None:
+            return self.resolved_max_schema_size
+
+        # schema is not being embedded, so there is not constraint
+        if self.raw_max_schema_size is not None:
+            self.resolved_max_schema_size = self.raw_max_schema_size
+        else:
+            self.resolved_max_schema_size = self.max_chunk_size
+
+        return self.resolved_max_schema_size
+
+    def resolve(self):
+        super().resolve()
+        _ = self.max_schema_size
         return self
 
 

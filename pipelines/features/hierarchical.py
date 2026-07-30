@@ -29,4 +29,4 @@ def hierarchical_feature_pipeline(
 
 
 if __name__ == '__main__':
-    hierarchical_feature_pipeline(HierarchicalV1Config(max_schema_size=2048))
+    hierarchical_feature_pipeline(HierarchicalV1Config(raw_max_schema_size=3000).resolve())

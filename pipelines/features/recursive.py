@@ -19,4 +19,4 @@ def recursive_feature_pipeline(
 
 
 if __name__ == '__main__':
-    recursive_feature_pipeline(RecursiveV1Config())
+    recursive_feature_pipeline(RecursiveV1Config().resolve())
