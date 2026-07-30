@@ -1,13 +1,12 @@
-from typing import Optional, Literal, Union, Annotated, Protocol, TypeVar, Generic
-from typing import Protocol, runtime_checkable, Mapping
+from typing import Literal, Union, Annotated, TypeVar, Generic, Optional, Callable
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, model_validator, Field
-
-from rag_system.settings import settings
-from rag_system.infrastructure import PromptStore
+from pydantic import BaseModel, Field, model_validator
 
 from .chunking import ChunkingConfig, RecursiveV1Config, HierarchicalV1Config, HierarchicalConfig, BaseChunkingConfig
 from .enums import InferenceStrategy
+
+from rag_system.settings import settings
+from rag_system.infrastructure import PromptStore
 
 
 StrategyT = TypeVar("StrategyT", bound=InferenceStrategy)
@@ -15,25 +14,41 @@ VersionT = TypeVar("VersionT", bound=str)
 ChunkingT = TypeVar("ChunkingT", bound=BaseChunkingConfig)
 
 
-@runtime_checkable
-class HasTemplates(Protocol):
-    def template_names(self) -> dict[str, str]: ...
-
-
-class BaseInferenceConfig(BaseModel, Generic[StrategyT, VersionT, ChunkingT]):
+class BaseInferenceConfig(BaseModel, ABC, Generic[StrategyT, VersionT, ChunkingT]):
     strategy: StrategyT
     version: VersionT
 
     chunking: ChunkingT
 
-    def load_prompts(self, store: PromptStore) -> dict[str, str]:
-        resolved: dict[str, str] = {}
-        for field_name in type(self).model_fields:
-            value = getattr(self, field_name)
-            if isinstance(value, HasTemplates):
-                for key, tmpl_name in value.template_names().items():
-                    resolved[f"{field_name}.{key}"] = store.load_one(self.strategy, self.version, tmpl_name)
-        return resolved
+    @abstractmethod
+    def resolve(self):
+        return self
+
+    def get_template_resolver(self):
+        return lambda name: PromptStore().load_one(
+            strategy=self.strategy,
+            version=self.version,
+            name=name
+        )
+
+
+class BaseTemplateConfig(BaseModel, ABC):
+    """Base mixin providing private resolver storage."""
+    _resolver: Optional[Callable[[str], str]] = None
+
+    def _resolve_field(self, field_name: str, template_name: str) -> str:
+        """Helper to resolve and cache template text into resolved_* fields."""
+        current_val = getattr(self, field_name)
+        if current_val is not None:
+            return current_val
+        if self._resolver is None:
+            raise RuntimeError(
+                f"Resolver not bound to {self.__class__.__name__}. "
+                "Ensure parent config ran model_validator."
+            )
+        resolved_val = self._resolver(template_name)
+        setattr(self, field_name, resolved_val)
+        return resolved_val
 
 
 class RecursiveV1InferenceConfig(
@@ -53,15 +68,28 @@ class RecursiveV1InferenceConfig(
 
     retrieval: RetrievalConfig = RetrievalConfig()
 
-    class GenerationConfig(BaseModel):
+    class GenerationConfig(BaseTemplateConfig):
         template_name: str = 'template'
         model_name: str = settings.LLM_MODEL_ID
         model_temperature: float = 0.3
 
-        def template_names(self) -> dict[str, str]:
-            return {'template': self.template_name}
+        resolved_template_text: Optional[str] = None
+
+        @property
+        def template_text(self) -> str:
+            return self._resolve_field("resolved_template_text", self.template_name)
 
     generation: GenerationConfig = GenerationConfig()
+
+    @model_validator(mode="after")
+    def attach_context(self) -> "RecursiveV1InferenceConfig":
+        self.generation._resolver = self.get_template_resolver()
+        return self
+
+    def resolve(self):
+        super().resolve()
+        _ = self.generation.template_text
+        return self
 
 
 class HierarchicalV1InferenceConfig(
@@ -75,13 +103,16 @@ class HierarchicalV1InferenceConfig(
     version: Literal["1.0"] = "1.0"
     chunking: HierarchicalConfig = HierarchicalV1Config()
 
-    class PreprocessConfig(BaseModel):
+    class PreprocessConfig(BaseTemplateConfig):
         template_name: str = 'preprocess'
         model_name: str = settings.PREPROCESSING_MODEL_ID
         model_temperature: float = 0.1
 
-        def template_names(self) -> dict[str, str]:
-            return {'template': self.template_name}
+        resolved_template_text: Optional[str] = None
+
+        @property
+        def template_text(self) -> str:
+            return self._resolve_field("resolved_template_text", self.template_name)
 
     preprocess: PreprocessConfig = PreprocessConfig()
 
@@ -95,13 +126,13 @@ class HierarchicalV1InferenceConfig(
         class RerankerConfig(BaseModel):
             model_name: str = settings.CROSS_ENCODER_MODEL_ID
             fact_k: int = 6
-            schema_k: int = 2
+            schema_k: int = 4
 
         reranker: RerankerConfig = RerankerConfig()
 
     retrieval: RetrievalConfig = RetrievalConfig()
 
-    class GenerationConfig(BaseModel):
+    class GenerationConfig(BaseTemplateConfig):
         model_name: str = settings.LLM_MODEL_ID
         model_temperature: float = 0.3
 
@@ -109,14 +140,37 @@ class HierarchicalV1InferenceConfig(
         schema_template_name: str = 'schema'
         general_template_name: str = 'general'
 
-        def template_names(self) -> dict[str, str]:
-            return {
-                'fact': self.fact_template_name,
-                'schema': self.schema_template_name,
-                'general': self.general_template_name
-            }
+        resolved_fact_template_text: Optional[str] = None
+        resolved_schema_template_text: Optional[str] = None
+        resolved_general_template_text: Optional[str] = None
+
+        @property
+        def fact_template_text(self) -> str:
+            return self._resolve_field("resolved_fact_template_text", self.fact_template_name)
+
+        @property
+        def schema_template_text(self) -> str:
+            return self._resolve_field("resolved_schema_template_text", self.schema_template_name)
+
+        @property
+        def general_template_text(self) -> str:
+            return self._resolve_field("resolved_general_template_text", self.general_template_name)
 
     generation: GenerationConfig = GenerationConfig()
+
+    @model_validator(mode="after")
+    def attach_context(self):
+        self.preprocess._resolver = self.get_template_resolver()
+        self.generation._resolver = self.get_template_resolver()
+        return self
+
+    def resolve(self):
+        super().resolve()
+        _ = self.preprocess.template_text
+        _ = self.generation.schema_template_text
+        _ = self.generation.fact_template_text
+        _ = self.generation.general_template_text
+        return self
 
 
 RecursiveInferenceConfig = Annotated[
