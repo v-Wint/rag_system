@@ -1,6 +1,6 @@
 from typing import Optional, Literal, Union, Annotated, TypeVar, Generic
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from rag_system.settings import settings
 from .enums import ChunkingMethod
@@ -59,6 +59,14 @@ class BaseChunkingConfig(BaseModel, ABC, Generic[MethodT, VersionT]):
     @property
     def slug(self) -> str:
         return "__".join(self.slug_parts)
+
+
+    @model_validator(mode="after")
+    def _mark_discriminators_set(self) -> "BaseChunkingConfig":
+        # Force these into model_fields_set regardless of how the
+        # instance was constructed, so exclude_unset never drops them.
+        self.__pydantic_fields_set__ |= {"strategy", "version"}
+        return self
 
 
 class RecursiveV1Config(BaseChunkingConfig[Literal[ChunkingMethod.RECURSIVE], Literal["1.0"]]):

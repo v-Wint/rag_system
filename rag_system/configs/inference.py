@@ -2,6 +2,7 @@ from typing import Literal, Union, Annotated, TypeVar, Generic, Optional, Callab
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field, model_validator
 
+
 from .chunking import ChunkingConfig, RecursiveV1Config, HierarchicalV1Config, HierarchicalConfig, BaseChunkingConfig
 from .enums import InferenceStrategy
 
@@ -30,6 +31,13 @@ class BaseInferenceConfig(BaseModel, ABC, Generic[StrategyT, VersionT, ChunkingT
             version=self.version,
             name=name
         )
+
+    @model_validator(mode="after")
+    def _mark_discriminators_set(self) -> "BaseInferenceConfig":
+        # Force these into model_fields_set regardless of how the
+        # instance was constructed, so exclude_unset never drops them.
+        self.__pydantic_fields_set__ |= {"strategy", "version"}
+        return self
 
 
 class BaseTemplateConfig(BaseModel, ABC):
@@ -166,6 +174,7 @@ class HierarchicalV1InferenceConfig(
 
     def resolve(self):
         super().resolve()
+        self.chunking.resolve()
         _ = self.preprocess.template_text
         _ = self.generation.schema_template_text
         _ = self.generation.fact_template_text
