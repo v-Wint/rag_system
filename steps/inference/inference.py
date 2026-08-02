@@ -1,29 +1,32 @@
 import mlflow
-from zenml import step, log_metadata
-from zenml.client import Client
-from rag_system.domain import RAGState, RAGConfig
-from rag_system.application.inference import get_graph
+from zenml import step
 
-experiment_tracker = Client().active_stack.experiment_tracker
+from loguru import logger
 
-@step(experiment_tracker=experiment_tracker.name) # type: ignore
-def inference_step(config: RAGConfig, query: str) -> dict:
+from rag_system.configs.inference import InferenceConfig
+from rag_system.domain import InferenceResult
+from rag_system.application.inference import get_runner
+
+
+@step(experiment_tracker="mlflow_tracker")
+def inference_step(config: InferenceConfig, queries: list[str]) -> list[InferenceResult]:
+    runner = get_runner(config)
+    runner.setup()
     mlflow.langchain.autolog()  # type: ignore
-    mlflow.log_params(config.model_dump())
-    mlflow.set_tag("query", query)
+    results = []
+    for query in queries:
+        logger.info(f"Processing query: {query}")
+        with mlflow.tracing.context( # type: ignore
+                tags={
+                    "strategy": config.strategy,
+                    "version": config.version,
+                }
+            ):
+                result = runner.predict(query)
 
-    graph = get_graph(config)
+        trace_id = mlflow.get_last_active_trace_id()
+        if trace_id:
+            mlflow.set_trace_tag(trace_id, "question_type", result.metadata.get("question_type", "unknown"))
 
-    initial_state = RAGState(query=query)
-    result = graph.invoke(initial_state)
-
-    log_metadata(
-        metadata={
-            "query_length": len(query),
-            "question_type": result.get('question_type', ''),
-            "retrieved_chunks": len(result.get('retrieved_chunks', [])),
-            "answer_length": len(result.get('answer', '')),
-        },
-        infer_artifact=True,
-    )
-    return result
+        results.append(result)
+    return results

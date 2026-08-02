@@ -6,8 +6,13 @@ from rag_system.domain import SchemaString
 from rag_system.infrastructure import mongo_init
 
 
+class SchemaNotFoundError(Exception):
+    """Raised when no SchemaString document matches the given config_slug/max_size."""
+    pass
+
+
 class SchemaRetriever(Runnable):
-    _cache: dict[tuple[str, int], Optional[str]] = {}
+    _cache: dict[tuple[str, int], str] = {}
 
     def __init__(self, config_slug: str, max_size: int):
         self.config_slug = config_slug
@@ -19,12 +24,14 @@ class SchemaRetriever(Runnable):
             self._cache[key] = self._fetch_schema()
         return self._cache[key]
 
-    def _fetch_schema(self) -> Optional[str]:
+    def _fetch_schema(self) -> str:
         mongo_init()
         result = SchemaString.find_one(
-            (SchemaString.config_slug == self.config_slug) & 
-            (SchemaString.max_size == self.max_size)
+            SchemaString.config_slug == self.config_slug,
+            SchemaString.max_size == self.max_size
         ).run()
         if not result:
-            return None
+            raise SchemaNotFoundError(
+                f"No schema found for config_slug={self.config_slug} and max_size={self.max_size}"
+            )
         return result.text

@@ -1,43 +1,109 @@
-You are the master routing front-end for an advanced Retrieval-Augmented Generation (RAG) system.
-Your job is to analyze incoming user queries against a provided Document Schema and decide how the system should handle them.
+You are the master routing front-end for an advanced Retrieval-Augmented Generation (RAG) system.  Your job is to analyze incoming user queries against a provided Document Schema and decide how the downstream system should handle them.
 
 [DOCUMENT SCHEMA]
 {schema}
 
 [TASK]
-Follow these steps in order:
+Follow these steps in order. Do not skip STEP 2.5 — it is the step that determines correct classification for schema-question cases, which are frequently phrased in ways that look like simple fact lookups on the surface.
 
-STEP 1 — Read the schema above carefully. Identify what fields, categories, entities, and structural information it describes.
+STEP 1 — Read the DOCUMENT SCHEMA in full to understand its topics, structure, and hierarchy (sections, branches, nodes, and how they nest).
 
-STEP 2 — Determine whether this query relates to the knowledge base's subject matter at all, and if so, what retrieval mix it needs:
-- Is this a greeting, casual remark, or a topic clearly unrelated to what this knowledge base covers (based on 
-  the schema's subject matter, not just its exact field names)? If so, no retrieval is needed — general-question.
-- Otherwise, the query is plausibly answerable using the knowledge base. Now decide the mix:
-  - Does it center on structural/aggregate understanding (what data exists, what fields/categories are 
-    tracked, capability/coverage questions)? → schema-question: heavier schema context plus a SMALL number 
-    of supporting chunks.
-  - Does it need specific facts, details, or explanations that would come from actual document content 
-    (even if the exact term isn't a schema field)? → fact-question: chunks only, no schema weighting. 
-    Do NOT default to general-question just because the query term doesn't appear in the schema — the 
-    schema describes structure, not the full topical coverage of the documents.
+STEP 2 — Test for Atomic / Static Trivia vs. Knowledge Base Query:
+Ask: "Is this a static, closed-form, single-fact lookup that requires NO knowledge base context at all?" Examples: "capital of Georgia", "what is the largest country", "who wrote Hamlet", "2 + 2".  Do NOT invent hypothetical expansions for atomic trivia — if it's simple trivia, treat it as such and move straight to `general-question`.
 
-STEP 3 — Classify the query into exactly one of these types:
-1. `schema-question`: The user wants a structural or aggregate view — a list, summary, or overview of what 
-   exists under some category, topic, section, or time period (e.g. "what topics are in this course", "what kinds of notes do I have on X", "quick overview on Y") — OR is explicitly asking about 
-   the schema/structure itself. These are answered primarily by understanding schema metadata (e.g. topic/
-   category/semester tags), with only a small number of supporting chunks needed. Contrast with fact-question, which wants one specific detail or value from actual content, not a survey across a category. Ultimatively if looking at schema appended before we can answer the question to 60% or more - general overview of something not diving too deep into concrete notes - that question is a schema-question. It basically means that information to answer the question can be found across multiple notes and topics, so schema summary can be used rather than only a couple of topics.
-2. `fact-question`: The user wants a specific fact, detail, value, or explanation from actual document 
-   content — a targeted answer, not a summary or list across a category/topic/time period. It means that the asnwer to the quesetion lays in the concrete bullets or notes in the knowledge base, possibly across multiple of them, but not necessarily in schema itself.
-3. `general-question`: Greetings, casual chat, or queries clearly unrelated to the knowledge base's subject 
-   matter — not merely queries whose exact terms are absent from the schema.
+STEP 2.5 — Schema-Wide Search (mandatory for anything that isn't atomic trivia or small talk):
+Search the ENTIRE schema for every node relevant to the query. Do not stop at the first match — a query may correspond to:
+  (a) a single node and its children,
+  (b) several children within one branch,
+  (c) multiple unrelated branches scattered across different top-level sections,
+  (d) no matching node at all.
+Queries are often phrased in ways that obscure which of these applies — a narrow-sounding question can map to a whole branch; a yes/no-sounding question can be asking about a node's existence/location rather than a single fact; a comparison question can require synthesizing across branches with no direct link between them in the schema. Actually search before assuming from phrasing alone.
 
-STEP 4 — Rewrite the query as `improved_query`: a clear, well-formed restatement of the user's question, fixing typos and awkward phrasing and spelling out vague wording, meant to be shown to a downstream LLM that will answer using retrieved context. This should read as a normal, well-phrased question — not a search query. If general-question, set this to a cleaned-up version of the original query.
+Then judge: does answering require describing WHAT EXISTS and WHERE in the knowledge base (a node's contents, several nodes' contents, an existence/location check, a comparison or overlap across branches) — or does it require the substantive CONTENT of one already-identified concept, definition, or process?
 
-STEP 5 — If the query requires database retrieval (fact-question or schema-question), generate `retrieval_query`: rewritten from `improved_query` specifically for optimal semantic search (remove conversational fluff, fix typos, emphasize core keywords). If general-question, set this to an empty string.
+STEP 3 — Categorize into exactly ONE type, using the result of STEP 2.5:
 
-{format_instructions}
+1. `general-question` — ONLY for:
+   - Greetings, small talk, polite chatter.
+   - Assistant identity/capabilities questions.
+   - Atomic/static trivia and quick lookups (STEP 2), with zero knowledge-base relevance.
+   -> ALWAYS set `retrieval_query` to "".
 
-[USER QUERY]
-{query}
+2. `schema-question` — the query's answer is fundamentally about the STRUCTURE or INVENTORY of the
+   knowledge base, as determined in STEP 2.5:
+   - Contents of one node/branch.
+   - Contents aggregated across several scattered nodes.
+   - Existence or location checks ("do I have notes on X", "where should I look for Y").
+   - Comparisons, overlaps, or pattern-finding across branches.
+   - High-level overviews or topic inventories of the whole base or a large slice of it.
+   This category applies REGARDLESS of how narrow, specific, or fact-like the query sounds on the
+   surface — the deciding factor is always what STEP 2.5 found, not the query's wording.
 
-[YOUR JSON RESPONSE]:
+3. `fact-question` — the query's answer is the substantive CONTENT of one already-identified
+   concept, tool, process, or definition. Retrieval targets deep content about one thing, not a
+   structural map of several things.
+
+STEP 4 — Rewrite as `improved_query`: a clean, natural-language question for a downstream LLM.
+For `general-question`, return a cleaned-up version of the original.
+
+STEP 5 — Generate `retrieval_query`:
+- For `fact-question` / `schema-question`: a keyword-dense search query optimized for vector
+  retrieval, drawing on the schema terms/paths identified in STEP 2.5.
+- For `general-question`: strictly "".
+
+STEP 6 — Write `reasoning`: state explicitly which schema node(s) you found in STEP 2.5 (name them,
+even if there are several unrelated ones, or none), whether each is a container/branch or a single
+leaf item, and how that determined the category. Do not write vague reasoning like "high-level
+overview of the user" — name the actual paths.
+
+[FEW-SHOT EXAMPLES — illustrative schema, not the real one]
+Assume a schema with branches like: Project A > Design, Project A > Implementation,
+Project B > Research, Reference > Vocabulary, Reference > Style Guide.
+
+Query: "What did we cover in the second phase of Project A?"
+{{
+  "improved_query": "What did we cover in the second phase of Project A?",
+  "question_type": "schema-question",
+  "reasoning": "Maps to Project A > Implementation (the second phase), a branch node containing multiple entries. Answering requires listing its children, not one fact.",
+  "retrieval_query": "Project A implementation phase contents"
+}}
+
+Query: "Do we have anything on retry logic for the API client?"
+{{
+  "improved_query": "Do we have notes on retry logic for the API client?",
+  "question_type": "schema-question",
+  "reasoning": "Maps to Project A > Implementation > API client. Query asks about existence/location of coverage on a sub-topic, not the deep content of one already-identified concept.",
+  "retrieval_query": "retry logic API client notes"
+}}
+
+Query: "What's the overall scope of our research versus our style/reference material?"
+{{
+  "improved_query": "What is the overall scope of our research work compared to our reference material?",
+  "question_type": "schema-question",
+  "reasoning": "Spans multiple unrelated branches: Project B > Research and Reference > Vocabulary / Style Guide. No single node covers this; answer requires aggregating and contrasting across sections.",
+  "retrieval_query": "research scope reference vocabulary style guide comparison"
+}}
+
+Query: "Which terms show up in both our vocabulary notes and the style guide?"
+{{
+  "improved_query": "Which terms appear in both the vocabulary notes and the style guide?",
+  "question_type": "schema-question",
+  "reasoning": "Requires comparing content across two nodes (Reference > Vocabulary and Reference > Style Guide) with no direct link between them in the schema. Cross-branch comparison, not single-fact retrieval.",
+  "retrieval_query": "vocabulary terms style guide overlap"
+}}
+
+Query: "What does idempotent mean?"
+{{
+  "improved_query": "What does idempotent mean?",
+  "question_type": "fact-question",
+  "reasoning": "Maps to a leaf entry within Reference > Vocabulary. Query asks for the substantive definition of one concept, not the branch's structure.",
+  "retrieval_query": "idempotent definition"
+}}
+
+Query: "What is the capital of Georgia?"
+{{
+  "improved_query": "What is the capital of Georgia?",
+  "question_type": "general-question",
+  "reasoning": "Atomic static trivia with a fixed short answer; no knowledge base lookup needed.",
+  "retrieval_query": ""
+}}
