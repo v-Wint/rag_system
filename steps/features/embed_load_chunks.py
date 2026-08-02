@@ -19,7 +19,7 @@ def embed_load_chunks_step(
         return
 
     embedder = Embedder.from_pretrained(embedding_model)
-    store = VectorStore.from_collection_name(collection_name=collection_name, embedding=embedder)
+    store = VectorStore.for_indexing(collection_name=collection_name, embedding=embedder)
 
     logger.info(
         f"Saving {len(chunks)} chunks with embedding_model={embedding_model}, collection_name={collection_name}"

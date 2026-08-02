@@ -1,7 +1,6 @@
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import Distance, VectorParams
 from langchain_qdrant import QdrantVectorStore
-from langchain_core.documents import Document
 from rag_system.settings import settings
 from rag_system.domain import ChunkDocument
 from rag_system.utils import get_hash
@@ -20,35 +19,59 @@ def get_qdrant_client() -> QdrantClient:
     return _qdrant_client
 
 
+class VectorStoreError(Exception):
+    pass
+
+
+class CollectionNotFoundError(VectorStoreError):
+    pass
+
+
 class VectorStore(QdrantVectorStore):
     _instances: dict[str, "VectorStore"] = {}
 
-    def __init__(self, collection_name: str, embedding):
+    def __init__(self, collection_name: str, embedding, create_if_missing: bool = False):
         client = get_qdrant_client()
+        exists = client.collection_exists(collection_name=collection_name)
 
-        if not client.collection_exists(collection_name=collection_name):
-            client.create_collection(
-                collection_name=collection_name,
-                vectors_config=VectorParams(
-                    size=embedding.vector_size,
-                    distance=Distance.COSINE,
-                ),
-            )
+        if not exists:
+            if create_if_missing:
+                client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=VectorParams(
+                        size=embedding.vector_size,
+                        distance=Distance.COSINE,
+                    ),
+                )
+            else:
+                raise CollectionNotFoundError(
+                    f"Collection '{collection_name}' does not exist"
+                )
 
         super().__init__(client=client, collection_name=collection_name, embedding=embedding)
+
+    @classmethod
+    def _get_or_create_instance(
+        cls, collection_name: str, embedding, create_if_missing: bool
+    ) -> "VectorStore":
+        if collection_name not in cls._instances:
+            cls._instances[collection_name] = cls(
+                collection_name, embedding, create_if_missing=create_if_missing
+            )
+        return cls._instances[collection_name]
+
+    @classmethod
+    def for_indexing(cls, collection_name: str, embedding) -> "VectorStore":
+        return cls._get_or_create_instance(collection_name, embedding, create_if_missing=True)
+
+    @classmethod
+    def for_retrieval(cls, collection_name: str, embedding) -> "VectorStore":
+        return cls._get_or_create_instance(collection_name, embedding, create_if_missing=False)
 
     @classmethod
     def collection_exists(cls, collection_name: str) -> bool:
         client = get_qdrant_client()
         return client.collection_exists(collection_name=collection_name)
-
-    @classmethod
-    def from_collection_name(
-        cls, collection_name: str, embedding
-    ) -> "VectorStore":
-        if collection_name not in cls._instances:
-            cls._instances[collection_name] = cls(collection_name, embedding)
-        return cls._instances[collection_name]
 
     @staticmethod
     def get_all_path_hash_pairs(collection_name) -> dict[str, str]:
