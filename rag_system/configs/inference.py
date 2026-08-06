@@ -72,7 +72,7 @@ class RecursiveV1InferenceConfig(
     chunking: ChunkingConfig = RecursiveV1Config()
 
     class RetrievalConfig(BaseModel):
-        k: int = 6
+        k: int = 8
 
     retrieval: RetrievalConfig = RetrievalConfig()
 
@@ -133,8 +133,8 @@ class HierarchicalV1InferenceConfig(
 
         class RerankerConfig(BaseModel):
             model_name: str = settings.CROSS_ENCODER_MODEL_ID
-            fact_k: int = 6
-            schema_k: int = 4
+            fact_k: int = 8
+            schema_k: int = 5
 
         reranker: RerankerConfig = RerankerConfig()
 

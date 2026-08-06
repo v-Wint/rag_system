@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from rag_system.configs.inference import InferenceConfig, HierarchicalV1InferenceConfig, InferenceStrategy
+from rag_system.configs.inference import InferenceConfig, HierarchicalV1InferenceConfig, InferenceStrategy, RecursiveV1InferenceConfig
 from rag_system.domain import InferenceResult
 
 class InferenceRunner(ABC):
@@ -37,9 +37,32 @@ class HierarchicalV1InferenceRunner(InferenceRunner):
             metadata={'question_type': result['question_type']}
         )
 
+class RecursiveV1InferenceRunner(InferenceRunner):
+    def __init__(self, config: RecursiveV1InferenceConfig):
+        self.config = config
+        self._chain = None
+
+    def setup(self):
+        if not self._chain:
+            from .strategies.recursive.v1.chain import build_chain
+            self._chain = build_chain(self.config)
+
+    def predict(self, query: str) -> InferenceResult:
+        if self._chain is None:
+            self.setup()
+        result = self._chain.invoke(query) # type: ignore
+        return InferenceResult(
+            query=query,
+            retrieved_chunks=result.get('retrieved_chunks'),
+            answer=result['answer'],
+        )
+
 
 def get_runner(config: InferenceConfig) -> InferenceRunner:
     if config.strategy == InferenceStrategy.HIERARCHICAL and config.version == "1.0":
         return HierarchicalV1InferenceRunner(config)
+
+    if config.strategy == InferenceStrategy.RECURSIVE and config.version == "1.0":
+        return RecursiveV1InferenceRunner(config)
 
     raise NotImplementedError
