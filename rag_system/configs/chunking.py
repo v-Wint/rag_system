@@ -1,4 +1,4 @@
-from typing import Optional, Literal, Union, Annotated, TypeVar, Generic
+from typing import Optional, Literal, Union, Annotated, TypeVar, Generic, Any
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field, model_validator
 
@@ -68,6 +68,15 @@ class BaseChunkingConfig(BaseModel, ABC, Generic[MethodT, VersionT]):
         self.__pydantic_fields_set__ |= {"strategy", "version"}
         return self
 
+    @abstractmethod
+    def get_params(self) -> dict[str, Any]:
+        return {
+            'method': self.method,
+            'version': self.version,
+            'embedding_model': self.embedding_model,
+            'max_chunk_size': self.max_chunk_size,
+        }
+
 
 class RecursiveV1Config(BaseChunkingConfig[Literal[ChunkingMethod.RECURSIVE], Literal["1.0"]]):
     method: Literal[ChunkingMethod.RECURSIVE] = ChunkingMethod.RECURSIVE
@@ -97,6 +106,14 @@ class RecursiveV1Config(BaseChunkingConfig[Literal[ChunkingMethod.RECURSIVE], Li
     def slug_parts(self) -> list[str]:
         return super().slug_parts + [str(self.overlap_size)]
 
+    def get_params(self) -> dict[str, Any]:
+        params = super().get_params()
+
+        params.update({
+            'overlap_size': self.overlap_size,
+        })
+        return params
+
 
 class HierarchicalV1Config(BaseChunkingConfig[Literal[ChunkingMethod.HIERARCHICAL], Literal["1.0"]]):
     method: Literal[ChunkingMethod.HIERARCHICAL] = ChunkingMethod.HIERARCHICAL
@@ -122,6 +139,14 @@ class HierarchicalV1Config(BaseChunkingConfig[Literal[ChunkingMethod.HIERARCHICA
         super().resolve()
         _ = self.max_schema_size
         return self
+
+    def get_params(self) -> dict[str, Any]:
+        params = super().get_params()
+
+        params.update({
+            'max_schema_size': self.max_schema_size,
+        })
+        return params
 
 
 RecursiveConfig = Annotated[

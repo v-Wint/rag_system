@@ -1,4 +1,4 @@
-from typing import Literal, Union, Annotated, TypeVar, Generic, Optional, Callable
+from typing import Literal, Union, Annotated, TypeVar, Generic, Optional, Callable, Any
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field, model_validator
 
@@ -7,7 +7,6 @@ from .chunking import ChunkingConfig, RecursiveV1Config, HierarchicalV1Config, H
 from .enums import InferenceStrategy
 
 from rag_system.settings import settings
-from rag_system.infrastructure import PromptStore
 
 
 StrategyT = TypeVar("StrategyT", bound=InferenceStrategy)
@@ -26,6 +25,7 @@ class BaseInferenceConfig(BaseModel, ABC, Generic[StrategyT, VersionT, ChunkingT
         return self
 
     def get_template_resolver(self):
+        from rag_system.infrastructure import PromptStore
         return lambda name: PromptStore().load_one(
             strategy=self.strategy,
             version=self.version,
@@ -38,6 +38,16 @@ class BaseInferenceConfig(BaseModel, ABC, Generic[StrategyT, VersionT, ChunkingT
         # instance was constructed, so exclude_unset never drops them.
         self.__pydantic_fields_set__ |= {"strategy", "version"}
         return self
+
+    @abstractmethod
+    def get_params(self) -> dict[str, Any]:
+        params = {
+            'strategy': self.strategy,
+            'version': self.version,
+        }
+        chunking_params = self.chunking.get_params()
+        params.update({'chunking.' + k: v for k, v in chunking_params.items()})
+        return params
 
 
 class BaseTemplateConfig(BaseModel, ABC):
@@ -98,6 +108,16 @@ class RecursiveV1InferenceConfig(
         super().resolve()
         _ = self.generation.template_text
         return self
+
+    def get_params(self) -> dict[str, Any]:
+        params = super().get_params()
+        params.update({
+            'retrieval.k': self.retrieval.k
+        })
+        params.update(
+            {'generation.' + k: v for k, v in self.generation.model_dump().items() if not k.endswith('template_text')}
+        )
+        return params
 
 
 class HierarchicalV1InferenceConfig(
@@ -180,6 +200,22 @@ class HierarchicalV1InferenceConfig(
         _ = self.generation.fact_template_text
         _ = self.generation.general_template_text
         return self
+
+    def get_params(self) -> dict[str, Any]:
+        params = super().get_params()
+        params.update(
+            {'preprocess.' + k: v for k, v in self.preprocess.model_dump().items() if not k.endswith('template_text')}
+        )
+        params.update(
+            {'retrieval.vector' + k: v for k, v in self.retrieval.vector.model_dump().items()}
+        )
+        params.update(
+            {'retrieval.reranker' + k: v for k, v in self.retrieval.reranker.model_dump().items()}
+        )
+        params.update(
+            {'generation.' + k: v for k, v in self.generation.model_dump().items() if not k.endswith('template_text')}
+        )
+        return params
 
 
 RecursiveInferenceConfig = Annotated[

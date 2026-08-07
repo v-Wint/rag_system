@@ -1,27 +1,27 @@
-from pathlib import Path
 from zenml import pipeline
 
-from rag_system.domain import RAGConfig
+from rag_system.configs.inference import InferenceConfig, RecursiveV1InferenceConfig, HierarchicalV1InferenceConfig
+from rag_system.configs.chunking import HierarchicalV1Config
 
-from steps.eval import load_questions_step, run_inference_step, eval_step
+from steps.eval import run_inference_step, run_evaluation_step
 
 
 @pipeline
 def evaluation_pipeline(
-    dataset_path: Path | str, 
-    config: RAGConfig
+    dataset_name: str,
+    config: InferenceConfig
 ):
-    questions, dataset_name = load_questions_step(dataset_path)
-    _, prediction_finished = run_inference_step(
-        dataset_name, config, questions
+    run_inference_step(
+        dataset_name, config
     )
-    eval_step(dataset_name, config, prediction_finished)
+    run_evaluation_step(
+        dataset_name, config, after='run_inference_step'
+    )
 
 if __name__ == '__main__':
-    config = RAGConfig(
-        collection_name="chunks__remnote_v1__hierarchical_v1__intfloat_multilingual_e5_base__510__2048",
-        preprocess_model="meta-llama/llama-4-scout-17b-16e-instruct",
-        reranking_size_schema=1
+    dataset_name = "golden_v1.0.json"
+    config = HierarchicalV1InferenceConfig(
+        chunking=HierarchicalV1Config(raw_max_schema_size=3000)
     )
-    dataset_path = "questions/golden.json"
-    evaluation_pipeline(dataset_path, config)
+    # config = RecursiveV1InferenceConfig()
+    evaluation_pipeline(dataset_name, config)

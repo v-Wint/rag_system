@@ -4,3 +4,4 @@ from .vector_store import VectorStore
 from .cross_encoders import CrossEncoder
 from .schema_retriver import SchemaRetriever
 from .prompt_store import PromptStore
+from .question_store import QuestionStore

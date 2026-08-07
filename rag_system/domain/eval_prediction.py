@@ -1,63 +1,45 @@
 from typing import Optional
-from pydantic import BaseModel, model_validator
+from pydantic import model_validator
 from pymongo import IndexModel
 from bunnet import Document
 from bunnet.operators import Set
-from rag_system.domain import RAGConfig, QuestionType
+
 from rag_system.utils import get_hash
 
-class Question(BaseModel):
-    id: str
-    question_type: QuestionType
-    user_input: str
-    reference: str
+from rag_system.configs.inference import InferenceConfig
+from .inference_result import InferenceResult
+
 
 class EvalPrediction(Document):
     dataset_name: str
-    config: RAGConfig
+    question_id: str
+    question: dict
+
+    config: InferenceConfig
     config_hash: str = ''
 
-    question_id: str
-    question_type: str
-    user_input: str
-    reference: str
+    result: InferenceResult
 
-    answer: str
-    retrieved_chunks: list[str]
-    classified_question_type: Optional[str] = None
+    trace_id: Optional[str]
+
+    class Settings:
+        name = "eval_predictions"
+        indexes = [
+            IndexModel(
+                ["dataset_name", "config_hash", "question_id"],
+                unique=True
+            ),
+        ]
 
     @model_validator(mode="after")
     def compute_config_hash(self):
         if not self.config_hash:
-            self.config_hash = get_hash(self.config.model_dump_json())
+            self.config_hash = get_hash(str(self.config.get_params()))
         return self
-
-    @classmethod
-    def build(
-        cls,
-        dataset_name: str,
-        config: RAGConfig,
-        question: Question,
-        answer: str,
-        retrieved_chunks: list[str],
-        classified_question_type: str
-    ) -> "EvalPrediction":
-        return cls(
-            dataset_name=dataset_name,
-            config=config,
-            question_id=question.id,
-            question_type=question.question_type,
-            user_input=question.user_input,
-            reference=question.reference,
-            answer=answer,
-            retrieved_chunks=retrieved_chunks,
-            classified_question_type=classified_question_type
-        )
 
     def upsert(self) -> None:
         set_fields = {
-            "answer": self.answer,
-            "retrieved_chunks": self.retrieved_chunks,
+            'result': self.result
         }
         EvalPrediction.find_one(
             EvalPrediction.dataset_name == self.dataset_name,
@@ -69,23 +51,20 @@ class EvalPrediction(Document):
     def exists(
         cls,
         dataset_name: str,
-        config: RAGConfig,
-        question: Question
+        question_id: str,
+        config: InferenceConfig
     ) -> bool:
-        config_hash = get_hash(config.model_dump_json())
+        config_hash = get_hash(str(config.get_params()))
         existing = cls.find_one(
             cls.dataset_name == dataset_name,
-            cls.config_hash == config_hash,
-            cls.question_id == question.id,
+            cls.question_id == question_id,
+            cls.config_hash == config_hash
         ).run()
         return existing is not None
 
-    class Settings:
-        name = "eval_predictions"
-        indexes = [
-            IndexModel(
-                ["dataset_name", "config_hash", "question_id"],
-                unique=True,
-                name="uniq_dataset_config_question",
-            ),
-        ]
+    @classmethod
+    def load(cls, dataset_name: str, config: InferenceConfig):
+        return cls.find(
+            cls.dataset_name == dataset_name,
+            cls.config_hash == get_hash(str(config.get_params()))
+        ).to_list()

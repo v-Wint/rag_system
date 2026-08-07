@@ -27,6 +27,7 @@ class Settings(BaseSettings):
         "rag_system.domain.documents.Document",
         "rag_system.domain.schema.DocumentTree",
         "rag_system.domain.schema.SchemaString",
+        "rag_system.domain.eval_prediction.EvalPrediction",
     ]
 
     @classmethod
