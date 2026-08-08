@@ -10,6 +10,7 @@ from rag_system.domain import EvalPrediction
 @step(enable_cache=False, experiment_tracker='mlflow_tracker')  # type: ignore
 def run_evaluation_step(dataset_name: str, config: InferenceConfig):
     mongo_init()
+    client = mlflow.MlflowClient()
     
     mlflow.log_param("dataset_name", dataset_name)
     mlflow.log_params(config.get_params())
@@ -19,11 +20,12 @@ def run_evaluation_step(dataset_name: str, config: InferenceConfig):
 
     active_run = mlflow.active_run()
     current_run_id = active_run.info.run_id if active_run else None
+
     if current_run_id:
-        for pred in predictions:
-            trace_id = getattr(pred, "trace_id", None)
-            if trace_id:
-                mlflow.set_trace_tag(trace_id, "mlflow.runId", current_run_id)
+        trace_ids = [getattr(pred, "trace_id", None) for pred in predictions]
+        trace_ids = [t for t in trace_ids if t]
+        if trace_ids:
+            client.link_traces_to_run(trace_ids=trace_ids, run_id=current_run_id)
     
     aggregated_metrics = {}
     metrics_to_aggregate = ["semantic_similarity", "router_accuracy"]

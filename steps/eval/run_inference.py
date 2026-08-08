@@ -24,7 +24,7 @@ def run_inference_step(
 
     mlflow.langchain.autolog()  # type: ignore
 
-    for question in questions:
+    for question in questions[:9]:
         if EvalPrediction.exists(dataset_name, question['id'], config):
             continue
 
@@ -37,16 +37,17 @@ def run_inference_step(
                 }
             ):
                 result = runner.predict(question['user_input'])
-                trace_id = mlflow.get_active_trace_id()
-                prediction = EvalPrediction(
-                    dataset_name=dataset_name,
-                    question_id=question['id'],
-                    question=question,
-                    config=config,
-                    result=result,
-                    trace_id=trace_id
-                )
-                prediction.upsert()
 
-                if trace_id:
-                    mlflow.set_trace_tag(trace_id, "question_type", result.metadata.get("question_type", "unknown"))
+        trace_id = mlflow.get_last_active_trace_id()
+        prediction = EvalPrediction(
+            dataset_name=dataset_name,
+            question_id=question['id'],
+            question=question,
+            config=config,
+            result=result,
+            trace_id=trace_id
+        )
+        prediction.upsert()
+
+        if trace_id:
+            mlflow.set_trace_tag(trace_id, "question_type", result.metadata.get("question_type", "unknown"))
