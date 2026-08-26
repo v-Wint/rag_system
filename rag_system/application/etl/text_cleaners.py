@@ -1,32 +1,5 @@
 import re
 
-def fix_inline_code_fences(text: str) -> str:
-    lines = text.splitlines()
-    result = []
-    in_fence = False
-    fence_indent = ""
-    
-    for line in lines:
-        match = re.match(r'^(\s*)-\s+(```\w*)', line)
-        if match and not in_fence:
-            indent = match.group(1)
-            fence_indent = indent + "    "
-            result.append(f"{indent}- {match.group(2)}")
-            in_fence = True
-            continue
-        
-        if in_fence:
-            if line.strip() == "```":
-                result.append(f"{fence_indent}```")
-                in_fence = False
-            else:
-                result.append(f"{fence_indent}{line}" if line.strip() else line)
-            continue
-        
-        result.append(line)
-    
-    return "\n".join(result)
-
 def clean_text(text: str) -> str:
     text = re.sub(r'!\[.*?\]\(.*?\)', '<img>', text)
     # 1. Remove all property/formatting command tokens
@@ -46,6 +19,4 @@ def clean_text(text: str) -> str:
     lines = [l for l in text.splitlines() if l.strip().rstrip('-').strip()]
     text = '\n'.join(lines)
 
-    text = fix_inline_code_fences(text)
-    
     return text
