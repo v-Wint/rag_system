@@ -1,48 +1,70 @@
-from ragas.metrics.collections import SemanticSimilarity, ExactMatch
-from ragas.embeddings import HuggingFaceEmbeddings
+from typing import Annotated
 
-import pandas as pd
-
+from ragas.metrics.collections import ExactMatch
+from ragas.llms import llm_factory
+from openai import AsyncOpenAI
 
 from rag_system.domain.eval_prediction import EvalPrediction
 from rag_system.settings import settings
 
+from .metrics.answer_correctness import CustomAnswerCorrectness
 
-def build_samples(predictions: list[EvalPrediction]) -> list[dict]:
+
+def build_samples(
+    questions: list[dict],
+    predictions: list[EvalPrediction]
+) -> list[dict]:
+    mapping = {prediction.question_id: prediction for prediction in predictions}
     samples = []
-    for prediction in predictions:
-        sample_dict = prediction.question
-        sample_dict['response'] = prediction.result.answer
+    ordered_predictions = []
+    for question in questions:
+        prediction = mapping[question['id']]
+        sample = question.copy()
+        sample['response'] = prediction.result.answer
+        sample['metrics'] = {}
+        if prediction.metrics:
+            sample['metrics'] = prediction.metrics.copy()
         if prediction.result.metadata.get('question_type'):
-            sample_dict['question_type_predicted'] = prediction.result.metadata.get('question_type')
+            sample['question_type_predicted'] = prediction.result.metadata.get('question_type')
         if prediction.result.retrieved_chunks:
-            sample_dict['retrieved_contexts'] = prediction.result.retrieved_chunks
-        samples.append(sample_dict)
+            sample['retrieved_contexts'] = prediction.result.retrieved_chunks
+        samples.append(sample)
+        ordered_predictions.append(prediction)
     return samples
+
 
 def evaluate_predictions(
     predictions: list[EvalPrediction],
-) -> pd.DataFrame:
+    questions: list[dict]
+) -> Annotated[list[dict], "samples"]:
+    samples = build_samples(questions, predictions)
 
-    embeddings = HuggingFaceEmbeddings(
-        model=settings.TEXT_EMBEDDING_MODEL_ID, 
-        api_key=settings.HUGGINGFACE_ACCESS_TOKEN, 
-        device=settings.TEXT_EMBEDDING_DEVICE
-    )
-    similarity = SemanticSimilarity(embeddings=embeddings)
     exact_match = ExactMatch()
 
-    samples = build_samples(predictions)
+    deepseek_client = AsyncOpenAI(
+        api_key=settings.DEEPSEEK_API_KEY,
+        base_url="https://api.deepseek.com/v1"
+    )
 
-    for sample in samples:
-        sample['semantic_similarity'] = similarity.score(
-            reference=sample['reference'],
-            response=sample['response']
-        ).value
-        if sample.get('question_type_predicted'):
-            sample['router_accuracy'] = exact_match.score(
-                reference=sample['question_type'],
-                response=sample['question_type_predicted']
-            ).value
+    llm = llm_factory(model=settings.LLM_AS_JUDGE_ID, client=deepseek_client, provider='openai')
 
-    return pd.DataFrame(samples)
+    answer_correctness = CustomAnswerCorrectness(llm=llm)
+
+    try:
+        for sample in samples:
+            if not sample['metrics'].get(answer_correctness.name):
+                score = answer_correctness.score(
+                    response=sample['response'], reference_facts=sample['reference_facts']
+                )
+                sample['metrics'][answer_correctness.name] = score.value
+                sample['metrics'][answer_correctness.name + "_reason"] = score.reason
+
+            if sample.get('question_type_predicted') and not sample['metrics'].get('router_accuracy'):
+                sample['metrics']['router_accuracy'] = exact_match.score(
+                    reference=sample['question_type'],
+                    response=sample['question_type_predicted']
+                ).value
+    except (Exception, KeyboardInterrupt) as e:
+        print(e)
+
+    return samples

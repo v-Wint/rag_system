@@ -13,12 +13,11 @@ from .inference_result import InferenceResult
 class EvalPrediction(Document):
     dataset_name: str
     question_id: str
-    question: dict
-
     config: InferenceConfig
     config_hash: str = ''
 
     result: InferenceResult
+    metrics: dict = {}
 
     trace_id: Optional[str]
 
@@ -39,7 +38,8 @@ class EvalPrediction(Document):
 
     def upsert(self) -> None:
         set_fields = {
-            'result': self.result
+            'result': self.result,
+            'metrics': self.metrics
         }
         EvalPrediction.find_one(
             EvalPrediction.dataset_name == self.dataset_name,

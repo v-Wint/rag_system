@@ -24,7 +24,7 @@ def run_inference_step(
 
     mlflow.langchain.autolog()  # type: ignore
 
-    for question in questions[:9]:
+    for question in questions:
         if EvalPrediction.exists(dataset_name, question['id'], config):
             continue
 
@@ -42,7 +42,6 @@ def run_inference_step(
         prediction = EvalPrediction(
             dataset_name=dataset_name,
             question_id=question['id'],
-            question=question,
             config=config,
             result=result,
             trace_id=trace_id
