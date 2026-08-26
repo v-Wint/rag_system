@@ -1,6 +1,7 @@
 from typing import Optional, Literal, Union, Annotated, TypeVar, Generic, Any
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, TypeAdapter
+import yaml
 
 from rag_system.settings import settings
 from .enums import ChunkingMethod
@@ -163,3 +164,9 @@ ChunkingConfig = Annotated[
     Union[RecursiveConfig, HierarchicalConfig],
     Field(discriminator="method")
 ]
+
+
+def load_from_yaml(yaml_path: str) -> ChunkingConfig:
+    with open(yaml_path, "r") as f:
+        raw_data = yaml.safe_load(f)
+    return TypeAdapter(ChunkingConfig).validate_python(raw_data)

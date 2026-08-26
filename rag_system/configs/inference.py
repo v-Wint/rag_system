@@ -1,6 +1,7 @@
 from typing import Literal, Union, Annotated, TypeVar, Generic, Optional, Callable, Any
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, TypeAdapter
+import yaml
 
 
 from .chunking import ChunkingConfig, RecursiveV1Config, HierarchicalV1Config, HierarchicalConfig, BaseChunkingConfig
@@ -232,3 +233,16 @@ InferenceConfig = Annotated[
     Union[RecursiveInferenceConfig, HierarchicalInferenceConfig],
     Field(discriminator="strategy")
 ]
+
+
+def load_from_yaml(yaml_path: str) -> InferenceConfig:
+    with open(yaml_path, "r") as f:
+        raw_data = yaml.safe_load(f)
+    return TypeAdapter(InferenceConfig).validate_python(raw_data)
+
+
+def from_argument():
+    import sys
+    if len(sys.argv) >= 2:
+        return load_from_yaml(sys.argv[1])
+    return None

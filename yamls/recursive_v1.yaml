@@ -1,0 +1,9 @@
+strategy: recursive
+version: "1.0"
+
+chunking:
+  method: recursive
+  version: "1.0"
+
+retrieval:
+  k: 5
