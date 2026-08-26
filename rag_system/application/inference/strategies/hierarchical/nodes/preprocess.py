@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
+from langchain_deepseek import ChatDeepSeek
 
 from rag_system.settings import settings
 
@@ -33,11 +33,12 @@ def make_preprocess_node(
     query_key='query'
 ):
     schema_retriever = SchemaRetriever(chunking_config.slug, chunking_config.max_schema_size)
-    llm = ChatGroq(
+    llm = ChatDeepSeek(
         model=model_name, 
         temperature=model_temperature, 
-        api_key=settings.GROQ_API_KEY # type: ignore
+        api_key=settings.DEEPSEEK_API_KEY # type: ignore
     )
+
     llm = llm.with_structured_output(QueryAnalysis)
     prompt = ChatPromptTemplate.from_messages([
         ("system", template_text),
@@ -66,16 +67,3 @@ def make_preprocess_node(
         }
 
     return preprocess_node
-
-
-if __name__ == '__main__':
-    from rag_system.configs.inference import HierarchicalV1InferenceConfig
-    config = HierarchicalV1InferenceConfig()
-    config.chunking.raw_max_schema_size = 3000
-
-    node = make_preprocess_node(config.chunking, config.preprocess.template_text, config.preprocess.model_name, config.preprocess.model_temperature)
-    print(node({'query': 'top 10 docker commands'}))
-    print(node({'query': 'teach me langchain'}))
-    print(node({'query': 'capital of ukraine?'}))
-    print(node({'query': 'sum of number up to 100?'}))
-    print(node({'query': 'what is docker?'}))

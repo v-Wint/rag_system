@@ -1,5 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_groq import ChatGroq
+from langchain_deepseek import ChatDeepSeek
 
 from rag_system.settings import settings
 
@@ -10,7 +10,7 @@ def _build_chain(
     model_name: str, 
     model_temperature: float
 ):
-    llm = ChatGroq(model=model_name, temperature=model_temperature, api_key=settings.GROQ_API_KEY) # type: ignore
+    llm = ChatDeepSeek(model=model_name, temperature=model_temperature, api_key=settings.DEEPSEEK_API_KEY) # type: ignore
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_template_text),
         ("human", human_template_text),

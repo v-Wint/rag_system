@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     MAX_CHUNK_SIZE_TOKENS: int = 2048
     MAX_SCHEMA_TOKENS: int = 1024
 
-    CROSS_ENCODER_MODEL_ID: str = "BAAI/bge-reranker-base"
+    CROSS_ENCODER_MODEL_ID: str = "BAAI/bge-reranker-v2-m3"
 
     QDRANT_DATABASE_HOST: str = "127.0.0.1"
     QDRANT_DATABASE_PORT: int = 6333
@@ -19,9 +19,11 @@ class Settings(BaseSettings):
     TEXT_EMBEDDING_DEVICE: str = "cpu"
 
     GROQ_API_KEY: str | None = None
+    DEEPSEEK_API_KEY: str | None = None
 
-    PREPROCESSING_MODEL_ID: str = "llama-3.1-8b-instant"
-    LLM_MODEL_ID: str = "openai/gpt-oss-120b"
+    PREPROCESSING_MODEL_ID: str = "deepseek-chat"
+    LLM_MODEL_ID: str = "deepseek-chat"
+    LLM_AS_JUDGE_ID: str = "deepseek-chat"
 
     MONGO_DOCUMENT_MODELS: list[str] = [
         "rag_system.domain.documents.Document",

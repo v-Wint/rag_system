@@ -1,7 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
-from langchain_groq import ChatGroq
+from langchain_deepseek import ChatDeepSeek
 
 from rag_system.infrastructure import Embedder, VectorStore
 from rag_system.configs.inference import RecursiveV1InferenceConfig
@@ -16,11 +16,11 @@ def build_chain(
     store = VectorStore.for_retrieval(config.chunking.slug, embedder)
     retriever = store.as_retriever(search_kwargs={"k": config.retrieval.k})
 
-    llm = ChatGroq(
+    llm = ChatDeepSeek(
         model=config.generation.model_name, 
         temperature=config.generation.model_temperature, 
-        api_key=settings.GROQ_API_KEY # type: ignore
-    ) 
+        api_key=settings.DEEPSEEK_API_KEY # type: ignore
+    )
 
     prompt = ChatPromptTemplate.from_messages(
         [
