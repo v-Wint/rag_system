@@ -1,7 +1,11 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
     
     DATABASE_HOST: str = "mongodb://rag_system:rag_system@localhost:27017"
     DATABASE_NAME: str = "rag_system"
@@ -27,7 +31,7 @@ class Settings(BaseSettings):
 
     MONGO_DOCUMENT_MODELS: list[str] = [
         "rag_system.domain.documents.Document",
-        "rag_system.domain.schema.DocumentTree",
+        "rag_system.domain.doc_node.KBTree",
         "rag_system.domain.schema.SchemaString",
         "rag_system.domain.eval_prediction.EvalPrediction",
     ]

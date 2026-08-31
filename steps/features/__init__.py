@@ -1,6 +1,10 @@
-from .get_changed import get_changed_step
-from .chunk_recursive import chunk_recursive_step
-from .chunk_hierarchical import chunk_hierarchical_step
-from .embed_load_chunks import embed_load_chunks_step
-from .sync_document_trees import sync_document_trees_step
-from .prune_save_schema import prune_save_schema_step
+from .reconcile_against_tree import reconcile_against_tree_step
+from .build_tree import build_tree_step
+from .upsert_kb_tree import upsert_kb_tree_step
+
+from .hierarchical.embed_hierarchical_chunks import embed_hierarchical_chunks_step
+from .hierarchical.prune_save_schema import prune_save_schema_step
+
+from .recursive.reconcile_against_vector_store import reconcile_against_vector_store_step
+from .recursive.chunk_recursive import chunk_recursive_step
+from .recursive.embed_load_chunks import embed_load_chunks_step

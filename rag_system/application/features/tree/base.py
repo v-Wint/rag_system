@@ -1,71 +1,4 @@
-from typing import Callable, Optional
-
 import re
-
-from rag_system.domain import DocumentNode, HierarchicalChunk
-
-
-def add_doc_path_to_schema(doc_path: list[str], schema: DocumentNode):
-    if doc_path:
-        root = DocumentNode(title=doc_path[0])
-        current = root
-        for level in doc_path[1:]:
-            new_node = DocumentNode(title=level)
-            current.children.append(new_node)
-            current = new_node
-        current.children.append(schema)
-    else:
-        root = schema
-    return root
-
-
-def _split_chunks(
-        text: str, 
-        doc_path: list[str], 
-        path: list, 
-        get_size: Callable[[str], int] = len, 
-        max_size=10_000,
-        node: Optional[DocumentNode] = None):
-
-    accumulator = ''
-    chunks = split(text)
-
-    result = []
-
-    for c in chunks:
-        # chunk-specific
-        title, body = title_body_split(c)
-
-        if not body or len(c.strip().splitlines()) <= 3:
-            candidate = HierarchicalChunk.from_params(path[-1] if path else '', doc_path, path[:-1], accumulator + '\n' + c.strip())
-            if get_size(candidate.embedding_text) >= max_size:
-                result.append(HierarchicalChunk.from_params(
-                        path[-1] if path else '', 
-                        doc_path, 
-                        path[:-1], 
-                        accumulator)
-                )
-                accumulator = c.strip()
-            else:
-                accumulator = candidate.text
-            continue
-
-        chunk = HierarchicalChunk.from_params(title, doc_path, path, c)
-
-        new_node = None
-        if node: 
-            new_node = DocumentNode(title=title)
-            node.children.append(new_node)
-
-        if get_size(chunk.embedding_text) < max_size:
-            result.append(chunk)
-        else:
-            new_chunks = _split_chunks(body, chunk.doc_path, chunk.rel_path, get_size, max_size, new_node)
-            result += new_chunks
-
-    if accumulator:
-        result.append(HierarchicalChunk.from_params(path[-1] if path else '', doc_path, path[:-1], accumulator))
-    return result
 
 
 def clean_line(line: str) -> str:
@@ -104,6 +37,18 @@ def title_body_split(text: str) -> tuple[str, str]:
         title = shorten_line(clean_line(parts[i]))
     body = '\n'.join(parts[i+1:])
     return title, body
+
+
+def raw_heading(text: str) -> str:
+    """Full (non-truncated) cleaned heading of a block, for internal node text."""
+    parts = text.split('\n')
+    i = 0
+    heading = clean_line(parts[0])
+    while i < len(parts) - 1 and not heading.strip().strip('.'):
+        i += 1
+        heading = clean_line(parts[i])
+    return heading
+
 
 def split_by_bullet(text, max_depth=50):
     current_depth = 1

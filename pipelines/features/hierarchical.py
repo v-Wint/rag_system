@@ -3,30 +3,34 @@ from zenml import pipeline
 from rag_system.configs.chunking import HierarchicalConfig, HierarchicalV1Config
 
 from steps.features import (
-    get_changed_step, chunk_hierarchical_step, embed_load_chunks_step, 
-    sync_document_trees_step, prune_save_schema_step)
+    reconcile_against_tree_step, build_tree_step, upsert_kb_tree_step,
+    embed_hierarchical_chunks_step, prune_save_schema_step)
 
 
 @pipeline
 def hierarchical_feature_pipeline(
     config: HierarchicalConfig
 ):
-    documents, to_delete_rel = get_changed_step(config.slug)
-
-    chunks, trees = chunk_hierarchical_step(documents, config)
-
-    embed_load_chunks_step(
-        chunks, to_delete_rel, config.embedding_model, config.slug
+    documents, deleted_paths = reconcile_against_tree_step(
+        config.size_metric, config.max_chunk_size
     )
 
-    structure_changed = sync_document_trees_step(
-        trees, to_delete_rel, config.slug
+    subtrees = build_tree_step(documents, config)
+
+    structure_changed = upsert_kb_tree_step(
+        subtrees, deleted_paths, config.size_metric, config.max_chunk_size
+    )
+
+    embed_hierarchical_chunks_step(
+        config.size_metric, config.max_chunk_size, config.embedding_model, config.slug,
+        structure_changed
     )
 
     prune_save_schema_step(
-        config.slug, config.embedding_model, config.max_schema_size, structure_changed
+        config.size_metric, config.max_chunk_size, config.max_schema_size,
+        config.embedding_model, structure_changed
     )
 
 
 if __name__ == '__main__':
-    hierarchical_feature_pipeline(HierarchicalV1Config(raw_max_schema_size=3000).resolve())
+    hierarchical_feature_pipeline(HierarchicalV1Config(raw_max_chunk_size=500, raw_max_schema_size=1000).resolve())

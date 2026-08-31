@@ -1,16 +1,20 @@
+import uuid
+
 import pytest
-from rag_system.application.features.chunking.hierarchical.v1 import hierarchical_v1
-from rag_system.application.features.chunking.hierarchical.base import (
-    _split_chunks,
+from rag_system.application.features.tree.base import (
     clean_line,
     shorten_line,
     title_body_split,
+    raw_heading,
     split_by_bullet,
     split_by_heading,
     split_by_newlines,
     split,
 )
-from rag_system.domain import BaseChunk, DocumentNode
+from rag_system.application.features.tree import build_doc_subtree
+from rag_system.application.features.chunking.hierarchical import flatten_leaves
+from rag_system.domain import DocNode
+from rag_system.utils import get_hash
 
 
 class TestCleanLine:
@@ -104,7 +108,6 @@ class TestShortenLine:
         assert shorten_line("     ") == ""
 
 
-
 class TestTitleBodySplit:
     def test_simple_heading_and_body(self):
         text = "# Title\nline one\nline two"
@@ -136,6 +139,20 @@ class TestTitleBodySplit:
         title, body = title_body_split("")
         assert title == ""
         assert body == ""
+
+
+class TestRawHeading:
+    def test_returns_non_truncated_heading(self):
+        assert raw_heading("# Full Heading") == "Full Heading"
+
+    def test_does_not_shorten_long_heading(self):
+        heading = "word " * 30
+        text = f"# {heading.strip()}\nbody"
+        assert raw_heading(text) == heading.strip()
+
+    def test_skips_blank_leading_lines(self):
+        text = "#\nReal Title\nbody"
+        assert raw_heading(text) == "Real Title"
 
 
 class TestSplitByBullet:
@@ -247,95 +264,144 @@ class TestSplit:
             split("")
 
 
-class TestSplitChunks:
-    def test_returns_list_of_chunks(self):
-        text = "# Heading One\nSome body content here\nmore text\nand more"
-        chunks = _split_chunks(text, ["doc"], [], len, 10_000, None)
-        assert isinstance(chunks, list)
-        assert all(isinstance(c, BaseChunk) for c in chunks)
+class TestBuildDocSubtree:
+    def test_returns_doc_subtree(self):
+        text = "# Section\nbody line one\nline two\nline three\nline four"
+        root = build_doc_subtree(text, ["docs", "notes.md"], "abc", len, 10_000)
+        assert isinstance(root, DocNode)
 
-    def test_small_sections_get_accumulated_into_single_chunk(self):
-        # short entries (<=3 lines / no body) should be merged via accumulator
-        text = "- short one\n- short two\n- short three"
-        chunks = _split_chunks(text, ["doc"], [], len, 10_000, None)
-        # they all get merged into the accumulator and flushed as one chunk
-        assert len(chunks) == 1
+    def test_string_doc_path_chain_mirrors_doc_path(self):
+        text = "# Section\nbody line one\nline two\nline three\nline four"
+        root = build_doc_subtree(text, "docs/notes.md".split('/'), "abc", len, 10_000)
+        assert root.title == "docs"
+        assert root.children[0].title == "notes.md"
 
-    def test_large_section_recurses_and_produces_multiple_chunks(self):
-        big_body = "\n".join(f"line {i} with some extra padding text" for i in range(50))
-        text = f"# Big Section\n{big_body}"
-        # tiny max_tokens forces recursion into the section body
-        chunks = _split_chunks(text, ["doc"], [], len, 50, None)
-        assert len(chunks) >= 1
-        for c in chunks:
-            assert isinstance(c, BaseChunk)
-
-    def test_accumulator_flushed_at_end(self):
-        text = "- a\n- b"
-        chunks = _split_chunks(text, ["doc"], [], len, 10_000, None)
-        assert len(chunks) == 1
-        assert "a" in chunks[0].text
-        assert "b" in chunks[0].text
-
-    def test_populates_schema_node_children_for_real_sections(self):
-        text = "# Heading One\nbody with enough lines\nline two\nline three\nline four\n# Heading 2"
-        root_node = DocumentNode()
-        _split_chunks(text, ["doc"], [], len, len(text) -5, root_node)
-        # a real (multi-line, titled) section should register a child node
-        assert len(root_node.children) >= 1
+    def test_doc_hash_set_on_root(self):
+        text = "# Section\nbody line one\nline two\nline three\nline four"
+        root = build_doc_subtree(text, ["docs", "notes.md"], "hash123", len, 10_000)
+        assert root.doc_hash == "hash123"
 
     def test_chunk_paths_are_correct(self):
         text = "# Heading One\nbody with enough lines\nline two\nline three\nline four\n# Heading 2"
-        chunks = _split_chunks(text, ["mydoc"], [], len, 10_000, None)
-        assert len(chunks) == 2
-        chunk = chunks[0]
-        assert chunk.doc_path == ["mydoc"]
-        assert chunk.title == "Heading One"
-        assert chunk.rel_path == ["Heading One"]
-        assert chunk.abs_path == ["mydoc", "Heading One"]
+        root = build_doc_subtree(text, ["mydoc"], "abc", len, 10_000)
+        leaves = list(root.walk_leaves())
+        section = next(leaf for leaf in leaves if not leaf.is_content)
+        assert section.doc_path == ["mydoc"]
+        assert section.title == "Heading One"
+        assert section.rel_path == ["Heading One"]
+        assert section.abs_path == ["mydoc", "Heading One"]
 
+    def test_content_leaf_holds_accumulated_small_entries(self):
+        text = "# Heading One\nbody line one\nline two\nline three\nline four\n# Heading 2"
+        root = build_doc_subtree(text, ["mydoc"], "abc", len, 10_000)
+        content = [leaf for leaf in root.walk_leaves() if leaf.is_content]
+        assert len(content) == 1
+        assert content[0].title == ""
+        assert content[0].text == "\nHeading 2"
 
-class TestHierarchicalV1:
-    def test_returns_chunks_and_root_schema_node(self):
+    def test_small_entries_accumulate_into_single_leaf(self):
+        text = "- short one\n- short two\n- short three"
+        root = build_doc_subtree(text, ["mydoc"], "abc", len, 10_000)
+        leaves = list(root.walk_leaves())
+        assert len(leaves) == 1
+        assert "short one" in leaves[0].text
+        assert "short three" in leaves[0].text
+
+    def test_large_section_recurses_and_internal_text_is_heading(self):
+        # two multi-line sections; max_size small enough that each section recurses
+        text = ("# Big Section\nline one\nline two\nline three\nline four\n"
+                "# Other Section\nb1\nb2\nb3\nb4")
+        root = build_doc_subtree(text, ["mydoc"], "abc", len, 50)
+        sections = [c for c in root.children if not c.is_content]
+        assert sections
+        internal = sections[0]
+        assert internal.children
+        assert internal.text == "Big Section"
+
+    def test_ids_encode_position(self):
+        text = "# A\nbody a\nbody b\nbody c\n# B\nbody d\nbody e\nbody f"
+        root = build_doc_subtree(text, ["mydoc"], "abc", len, 10_000)
+        # doc root is "0", children "00", "01", ...
+        assert root.id == "0"
+        assert [c.id for c in root.children] == ["00", "01"]
+
+    def test_depth_and_distance_to_leaves(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
-        chunks, root = hierarchical_v1(text, "docs/notes.md")
-        assert isinstance(chunks, list)
-        assert all(isinstance(c, BaseChunk) for c in chunks)
-        assert isinstance(root, DocumentNode)
+        root = build_doc_subtree(text, ["mydoc"], "abc", len, 10_000)
+        assert root.depth == 0
+        for leaf in root.walk_leaves():
+            assert leaf.distance_to_leaves == 0
+        assert root.distance_to_leaves == 1
 
-    def test_string_doc_path_is_split_on_slash(self):
+
+class TestFlattenLeaves:
+    def test_documents_match_previous_chunk_output(self):
+        text = "# Heading One\nbody with enough lines\nline two\nline three\nline four\n# Heading 2"
+        root = build_doc_subtree(text, ["mydoc"], "abc", len, 10_000)
+        documents = flatten_leaves([root])
+        assert len(documents) == 2
+
+        section_doc = documents[0]
+        assert section_doc.page_content == (
+            "Document Location: mydoc > Heading One\n\n"
+            "# Heading One\nbody with enough lines\nline two\nline three\nline four"
+        )
+        assert section_doc.metadata["doc_path"] == "mydoc"
+        assert section_doc.metadata["title"] == "Heading One"
+        assert section_doc.metadata["abs_path"] == "mydoc/Heading One"
+        assert section_doc.metadata["rel_path"] == "Heading One"
+        assert section_doc.metadata["doc_hash"] == "abc"
+
+        content_doc = documents[1]
+        assert content_doc.page_content == "Document Location: mydoc > \n\n\nHeading 2"
+        assert content_doc.metadata["title"] == ""
+        assert content_doc.metadata["abs_path"] == "mydoc/"
+
+    def test_deterministic_id_from_text_and_hash(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
-        chunks, root = hierarchical_v1(text, "docs/notes.md")
-        assert chunks[0].doc_path == ["docs", "notes.md"]
+        root = build_doc_subtree(text, ["doc"], "abc", len, 10_000)
+        documents = flatten_leaves([root])
+        expected = str(uuid.UUID(get_hash(documents[0].page_content + "abc")))
+        assert documents[0].id == expected
 
-    def test_list_doc_path_used_as_is(self):
+    def test_empty_doc_produces_no_chunks(self):
+        root = build_doc_subtree("", ["doc"], "abc", len, 10_000)
+        documents = flatten_leaves([root])
+        assert documents == []
+
+
+class TestUnite:
+    def test_unite_merges_shared_doc_path_prefixes(self):
         text = "# Section\nbody line one\nline two\nline three\nline four"
-        chunks, root = hierarchical_v1(text, ["docs", "notes.md"])
-        assert chunks[0].doc_path == ["docs", "notes.md"]
+        doc1 = build_doc_subtree(text, ["Root", "Section", "note1.md"], "a", len, 10_000)
+        doc2 = build_doc_subtree(text, ["Root", "Section", "note2.md"], "b", len, 10_000)
+        united = DocNode.unite([doc1, doc2])
+        assert united.title == "root"
+        assert united.children[0].title == "Root"
+        assert united.children[0].children[0].title == "Section"
+        assert [c.title for c in united.children[0].children[0].children] == [
+            "note1.md", "note2.md"
+        ]
 
-    def test_schema_tree_mirrors_doc_path(self):
-        text = "# Section\nbody line one\nline two\nline three\nline four"
-        _, root = hierarchical_v1(text, "a/b/c")
-        assert root.title == "a"
-        assert root.children[0].title == "b"
-        assert root.children[0].children[0].title == "c"
+    def test_unite_skips_content_leaves(self):
+        text = "# Heading One\nbody line one\nline two\nline three\nline four\n# Heading 2"
+        doc = build_doc_subtree(text, ["mydoc"], "a", len, 10_000)
+        united = DocNode.unite([doc])
+        # content leaf titled "" must not appear in the united schema
+        schema = str(united)
+        assert "- root" in schema
+        assert "mydoc" in schema
+        assert "- Heading One" in schema
+        assert schema.count("Heading") == 1
 
-    def test_empty_doc_path_uses_leaf_as_root(self):
-        text = "# Section\nbody line one\nline two\nline three\nline four"
-        _, root = hierarchical_v1(text, [])
-        # with no doc_path, the leaf node produced by _split_chunks becomes root
-        assert isinstance(root, DocumentNode)
-
-    def test_respects_max_tokens_by_recursing(self):
-        big_body = "\n".join(f"detail line {i} padding padding" for i in range(80))
-        text = f"# Big\n{big_body}"
-        chunks, _ = hierarchical_v1(text, "doc", get_size=len, max_size=100)
-        assert len(chunks) > 1
-        for c in chunks:
-            assert len(c.embedding_text) < 100 or True  # recursed leaves should mostly fit
-
-    def test_embedding_text_contains_location_breadcrumb(self):
-        text = "# Section\nbody line one\nline two\nline three\nline four"
-        chunks, _ = hierarchical_v1(text, "doc")
-        assert chunks[0].embedding_text.startswith("Document Location: ")
-        assert "Section" in chunks[0].embedding_text
+    def test_schema_renders_nested_doc_paths(self):
+        text = "# Section\nbody line one\nline two\nline three\nline four\n# End"
+        doc = build_doc_subtree(text, ["Root", "Section", "note.md"], "a", len, 10_000)
+        united = DocNode.unite([doc])
+        assert str(united) == (
+            "- root\n"
+            "  - Root\n"
+            "    - Section\n"
+            "      - note.md\n"
+            "        - Section"
+        )

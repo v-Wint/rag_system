@@ -8,12 +8,17 @@ from rag_system.application.features import reconcile
 
 
 @step(enable_cache=False)
-def get_changed_step(
+def reconcile_against_vector_store_step(
     collection_name: str
 ) -> tuple[
     Annotated[list[Document], "raw_documents"],
     Annotated[list[str], "deleted_paths_relative"]
 ]:
+    """Reconcile warehouse documents against the collection's path/hash map.
+
+    Returns docs needing (re)chunking and the stale relative paths to delete.
+    Recursive baseline only (no KBTree involved).
+    """
     mongo_init()
 
     logger.info("Reconciling warehouse and feature store.")

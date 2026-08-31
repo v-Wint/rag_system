@@ -105,6 +105,12 @@ class VectorStore(QdrantVectorStore):
         documents = [cd.to_document() for cd in cds]
         return self.add_documents(documents, **kwargs)
 
+    def clear(self) -> None:
+        self.client.delete(
+            collection_name=self.collection_name,
+            points_selector=models.FilterSelector(filter=models.Filter()),
+        )
+
     def delete_by_relative_paths(self, relative_paths: list[str]) -> None:
         if not relative_paths:
             return

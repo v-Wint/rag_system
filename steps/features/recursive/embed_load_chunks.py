@@ -15,6 +15,7 @@ def embed_load_chunks_step(
     collection_name: str,
     batch_size: int = 200
 ) -> None:
+    """Delete stale relative paths, then embed and load recursive chunks."""
     if not chunks and not to_delete_rel:
         return
 

@@ -1,8 +1,8 @@
 from typing import Callable
-from rag_system.domain import DocumentNode
+from rag_system.domain import DocNode
 
 def prune_tree(
-    tree: DocumentNode,
+    tree: DocNode,
     get_size: Callable[[str], int],
     max_size: int,
 ):

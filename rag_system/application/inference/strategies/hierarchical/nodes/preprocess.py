@@ -32,7 +32,11 @@ def make_preprocess_node(
     model_temperature: float,
     query_key='query'
 ):
-    schema_retriever = SchemaRetriever(chunking_config.slug, chunking_config.max_schema_size)
+    schema_retriever = SchemaRetriever(
+        chunking_config.size_metric,
+        chunking_config.max_chunk_size,
+        chunking_config.max_schema_size,
+    )
     llm = ChatDeepSeek(
         model=model_name, 
         temperature=model_temperature, 

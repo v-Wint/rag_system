@@ -2,7 +2,7 @@ from loguru import logger
 from tqdm import tqdm
 from typing_extensions import Annotated
 from zenml import step, log_metadata
-from rag_system.domain import Document, DocumentTree, ChunkDocument
+from rag_system.domain import Document, ChunkDocument
 from rag_system.application.features.chunking.recursive import chunk_document_recursive
 from rag_system.infrastructure import Embedder
 from rag_system.configs.chunking import RecursiveConfig
@@ -13,6 +13,7 @@ def chunk_recursive_step(
     documents: list[Document],
     config: RecursiveConfig
 ) -> Annotated[list[ChunkDocument], "chunks"]:
+    """Split documents into flat RecursiveChunks per the recursive config."""
     if not documents:
         return []
 

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, model_validator, TypeAdapter
 import yaml
 
 
-from .chunking import ChunkingConfig, RecursiveV1Config, HierarchicalV1Config, HierarchicalConfig, BaseChunkingConfig
+from .chunking import ChunkingConfig, RecursiveV1Config, HierarchicalV1Config, HierarchicalConfig, AgenticConfig, AgenticV1Config, BaseChunkingConfig
 from .enums import InferenceStrategy
 
 from rag_system.settings import settings
@@ -219,6 +219,49 @@ class HierarchicalV1InferenceConfig(
         return params
 
 
+class AgenticV1InferenceConfig(
+    BaseInferenceConfig[
+        Literal[InferenceStrategy.AGENTIC],
+        Literal["1.0"],
+        AgenticConfig,
+    ]
+):
+    strategy: Literal[InferenceStrategy.AGENTIC] = InferenceStrategy.AGENTIC
+    version: Literal["1.0"] = "1.0"
+    chunking: AgenticConfig = AgenticV1Config()
+
+    class GenerationConfig(BaseTemplateConfig):
+        template_name: str = 'agent_template'
+        model_name: str = settings.LLM_MODEL_ID
+        model_temperature: float = 0.3
+
+        resolved_template_text: Optional[str] = None
+
+        @property
+        def template_text(self) -> str:
+            return self._resolve_field("resolved_template_text", self.template_name)
+
+    generation: GenerationConfig = GenerationConfig()
+
+    @model_validator(mode="after")
+    def attach_context(self) -> "AgenticV1InferenceConfig":
+        self.generation._resolver = self.get_template_resolver()
+        return self
+
+    def resolve(self):
+        super().resolve()
+        self.chunking.resolve()
+        _ = self.generation.template_text
+        return self
+
+    def get_params(self) -> dict[str, Any]:
+        params = super().get_params()
+        params.update(
+            {'generation.' + k: v for k, v in self.generation.model_dump().items() if not k.endswith('template_text')}
+        )
+        return params
+
+
 RecursiveInferenceConfig = Annotated[
     Union[RecursiveV1InferenceConfig],
     Field(discriminator="version")
@@ -229,8 +272,13 @@ HierarchicalInferenceConfig = Annotated[
     Field(discriminator="version")
 ]
 
+AgenticInferenceConfig = Annotated[
+    Union[AgenticV1InferenceConfig],
+    Field(discriminator="version")
+]
+
 InferenceConfig = Annotated[
-    Union[RecursiveInferenceConfig, HierarchicalInferenceConfig],
+    Union[RecursiveInferenceConfig, HierarchicalInferenceConfig, AgenticInferenceConfig],
     Field(discriminator="strategy")
 ]
 
