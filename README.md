@@ -30,4 +30,4 @@ The application relies on the Feature Training Inference architecture and consis
 - **Document store**: MongoDB
 - **Vector DB**: Qdrant
 - **Embeddings**: HuggingFace
-- **LLMs**: Groq
+- **LLMs**: DeepSeek
