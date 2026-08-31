@@ -46,7 +46,7 @@ def evaluate_predictions(
         base_url="https://api.deepseek.com/v1"
     )
 
-    llm = llm_factory(model=settings.LLM_AS_JUDGE_ID, client=deepseek_client, provider='openai')
+    llm = llm_factory(model=settings.LLM_AS_JUDGE_ID, client=deepseek_client, provider='openai', max_tokens=100_000)
 
     answer_correctness = CustomAnswerCorrectness(llm=llm)
 

@@ -1,0 +1,15 @@
+strategy: agentic
+version: "1.0"
+
+chunking:
+  method: agentic
+  version: "1.0"
+
+generation:
+  template_name: "template"
+  model_temperature: 0.3
+
+tooling:
+  max_expand_size: 3000
+  preview_length: 80
+  max_iterations: 10

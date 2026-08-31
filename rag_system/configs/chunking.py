@@ -20,7 +20,7 @@ class BaseChunkingConfig(BaseModel, ABC, Generic[MethodT, VersionT]):
     def _mark_discriminators_set(self) -> "BaseChunkingConfig":
         # Force these into model_fields_set regardless of how the
         # instance was constructed, so exclude_unset never drops them.
-        self.__pydantic_fields_set__ |= {"strategy", "version"}
+        self.__pydantic_fields_set__ |= {"method", "version"}
         return self
 
     @abstractmethod

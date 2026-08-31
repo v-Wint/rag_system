@@ -1,6 +1,14 @@
 from abc import ABC, abstractmethod
 
-from rag_system.configs.inference import InferenceConfig, HierarchicalV1InferenceConfig, InferenceStrategy, RecursiveV1InferenceConfig
+from langchain_core.messages import HumanMessage, SystemMessage
+
+from rag_system.configs.inference import (
+    InferenceConfig,
+    HierarchicalV1InferenceConfig,
+    InferenceStrategy,
+    RecursiveV1InferenceConfig,
+    AgenticV1InferenceConfig,
+)
 from rag_system.domain import InferenceResult
 
 class InferenceRunner(ABC):
@@ -58,11 +66,49 @@ class RecursiveV1InferenceRunner(InferenceRunner):
         )
 
 
+class AgenticV1InferenceRunner(InferenceRunner):
+    def __init__(self, config: AgenticV1InferenceConfig):
+        self.config = config
+        self._graph = None
+
+    def setup(self):
+        if not self._graph:
+            from .strategies.agentic.v1.graph import build_graph
+            self._graph = build_graph(self.config)
+
+    def predict(self, query: str) -> InferenceResult:
+        if self._graph is None:
+            self.setup()
+        result = self._graph.invoke({  # type: ignore
+            'query': query,
+            'messages': [
+                SystemMessage(self.config.generation.template_text),
+                HumanMessage(query),
+            ],
+            'iteration': 0,
+        })
+        return InferenceResult(
+            query=query,
+            retrieved_chunks=None,
+            answer=result['answer'],
+            metadata={
+                'expanded_ids': [
+                    id
+                    for entry in result.get('debug', [])
+                    for id in entry.get('expanded_ids', [])
+                ],
+            },
+        )
+
+
 def get_runner(config: InferenceConfig) -> InferenceRunner:
     if config.strategy == InferenceStrategy.HIERARCHICAL and config.version == "1.0":
         return HierarchicalV1InferenceRunner(config)
 
     if config.strategy == InferenceStrategy.RECURSIVE and config.version == "1.0":
         return RecursiveV1InferenceRunner(config)
+
+    if config.strategy == InferenceStrategy.AGENTIC and config.version == "1.0":
+        return AgenticV1InferenceRunner(config)
 
     raise NotImplementedError

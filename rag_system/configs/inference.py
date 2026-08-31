@@ -231,7 +231,7 @@ class AgenticV1InferenceConfig(
     chunking: AgenticConfig = AgenticV1Config()
 
     class GenerationConfig(BaseTemplateConfig):
-        template_name: str = 'agent_template'
+        template_name: str = 'template'
         model_name: str = settings.LLM_MODEL_ID
         model_temperature: float = 0.3
 
@@ -242,6 +242,13 @@ class AgenticV1InferenceConfig(
             return self._resolve_field("resolved_template_text", self.template_name)
 
     generation: GenerationConfig = GenerationConfig()
+
+    class ToolingConfig(BaseModel):
+        max_expand_size: int = 3000
+        preview_length: int = 80
+        max_iterations: int = 10
+
+    tooling: ToolingConfig = ToolingConfig()
 
     @model_validator(mode="after")
     def attach_context(self) -> "AgenticV1InferenceConfig":
@@ -258,6 +265,9 @@ class AgenticV1InferenceConfig(
         params = super().get_params()
         params.update(
             {'generation.' + k: v for k, v in self.generation.model_dump().items() if not k.endswith('template_text')}
+        )
+        params.update(
+            {'tooling.' + k: v for k, v in self.tooling.model_dump().items()}
         )
         return params
 

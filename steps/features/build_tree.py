@@ -5,13 +5,13 @@ from zenml import step, log_metadata
 
 from rag_system.domain import Document, DocNode
 from rag_system.application.features.tree import build_doc_subtree
-from rag_system.configs.chunking import HierarchicalConfig
+from rag_system.configs.chunking import ChunkingConfig
 
 
 @step
 def build_tree_step(
     documents: list[Document],
-    config: HierarchicalConfig
+    config: ChunkingConfig
 ) -> Annotated[list[DocNode], "doc_subtrees"]:
     """Build rich DocNode subtrees for the changed documents.
 
