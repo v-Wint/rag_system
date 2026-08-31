@@ -1,0 +1,27 @@
+strategy: hierarchical
+version: "1.0"
+
+chunking:
+  method: hierarchical
+  version: "1.0"
+  raw_max_schema_size: 2048
+
+preprocess:
+  template_name: "preprocess_1.2"
+  model_temperature: 0.1
+
+retrieval:
+  vector:
+    fact_k: 25
+    schema_k: 12
+  reranker:
+    model_name: "BAAI/bge-reranker-v2-m3"
+    fact_k: 10
+    schema_k: 6
+
+generation:
+  model_temperature: 0.3
+
+  fact_template_name: "fact"
+  schema_template_name: "schema"
+  general_template_name: "general"
